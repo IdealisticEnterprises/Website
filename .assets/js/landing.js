@@ -13,6 +13,26 @@
     update();
   }
 
+  const navTry = document.getElementById('nav-try');
+  const tryButtons = document.querySelectorAll('[data-try]');
+
+  if (navTry && tryButtons.length && 'IntersectionObserver' in window) {
+    const visible = new Set();
+    const tryObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          visible.add(entry.target);
+        } else {
+          visible.delete(entry.target);
+        }
+      });
+      navTry.classList.toggle('is-hidden', visible.size > 0);
+    }, {rootMargin: '-72px 0px 0px 0px'});
+    tryButtons.forEach(function (button) {
+      tryObserver.observe(button);
+    });
+  }
+
   const revealItems = document.querySelectorAll('.reveal');
 
   if ('IntersectionObserver' in window) {
