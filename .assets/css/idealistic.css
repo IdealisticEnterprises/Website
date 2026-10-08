@@ -52,7 +52,6 @@ body {
 }
 
 .bg-card { background-color: var(--surface) !important; border-color: var(--border-color) !important; }
-.text-body { color: var(--text) !important; }
 .text-secondary-theme { color: var(--text-muted) !important; }
 .border-color { border-color: var(--border-color) !important; }
 
@@ -150,7 +149,6 @@ body {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
-#visitorCount::placeholder { color: rgba(255, 255, 255, 0.4) !important; opacity: 1; }
 
 .input-actions .btn, .input-actions .dropdown > .btn {
     border-radius: 0;
@@ -314,12 +312,6 @@ input[type=number] { -moz-appearance: textfield; }
 
 .collapsing { transition: height 0.4s ease-in-out !important; }
 
-.pricing-card {
-    background-color: rgba(255, 255, 255, 0.035) !important;
-    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s ease, border-color 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease;
-    position: relative;
-}
-
 .social-icon-link {
     background-color: rgba(255, 255, 255, 0.035) !important;
     color: var(--text-muted);
@@ -410,8 +402,6 @@ input[type=number] { -moz-appearance: textfield; }
 .sp_desc a.custom-link-color:hover { color: var(--primary-blue-hover) !important; }
 .custom-link-color { color: var(--primary-blue) !important; transition: color 0.2s ease; }
 .custom-link-color:hover { color: var(--primary-blue-hover) !important; }
-.hover-text-white { transition: color 0.2s ease; }
-.hover-text-white:hover { color: var(--text) !important; }
 
 .thinking-wrapper { margin-top: 1rem; margin-bottom: 1rem; position: relative; z-index: 2; }
 
@@ -425,9 +415,6 @@ input[type=number] { -moz-appearance: textfield; }
     animation: shimmer 1.5s infinite;
 }
 @keyframes shimmer { 100% { left: 100%; } }
-
-.lang-dropdown-menu::-webkit-scrollbar { display: none; }
-.lang-dropdown-menu { scrollbar-width: none; }
 
 .reviews-carousel-wrapper {
     width: 100%;
@@ -450,21 +437,6 @@ input[type=number] { -moz-appearance: textfield; }
     -webkit-overflow-scrolling: touch;
 }
 .reviews-scroll-area::-webkit-scrollbar { display: none; }
-
-.review-card {
-    background-color: rgba(255, 255, 255, 0.035) !important;
-    flex: 0 0 auto;
-    width: calc(100vw - 60px);
-    max-width: 400px;
-    border: 1px solid var(--border-color);
-    border-radius: 0;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}
-.review-card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); border-color: rgba(255, 255, 255, 0.25); }
 
 .reviews-dots { display: flex; justify-content: center; gap: 8px; margin-top: 5px; margin-bottom: 10px; }
 .review-dot { width: 8px; height: 8px; border-radius: 0; background: rgba(255, 255, 255, 0.2); cursor: pointer; transition: background 0.3s ease; }
@@ -805,11 +777,8 @@ input[type=number] { -moz-appearance: textfield; }
     .mb-5 { margin-bottom: 2rem !important; }
     .p-4 { padding: 1.25rem !important; }
     .g-4 { --bs-gutter-y: 1rem; --bs-gutter-x: 1rem; }
-    .lead { font-size: 1rem; }
-    h1.fs-3 { font-size: 1.5rem !important; }
 }
 
-/* ===== Design language shared with the landing page: absolutely square, translucent "island" surfaces over soft light ===== */
 *, *::before, *::after,
 [class*="rounded"], [class*="rounded"]::before, [class*="rounded"]::after {
     border-radius: 0 !important;
@@ -828,7 +797,7 @@ body {
     background-attachment: fixed;
 }
 
-.bg-card, .pricing-card, .feature-box-inner, .modal-content, .dropdown-menu, .social-icon-link, .msg-assistant, .input-pill {
+.bg-card, .feature-box-inner, .modal-content, .dropdown-menu, .social-icon-link, .msg-assistant, .input-pill {
     background-color: var(--glass-surface) !important;
     border: 1px solid var(--glass-line) !important;
     -webkit-backdrop-filter: blur(26px) saturate(170%);
@@ -870,4 +839,21 @@ body {
     .btn-light, .btn-primary {
         transition: none;
     }
+}
+
+.io-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+.io-brand:hover { color: #fff; }
+.io-brand img { display: block; }
+
+.demo-disclaimer {
+    font-size: 0.8rem;
 }

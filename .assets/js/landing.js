@@ -1,10 +1,8 @@
-// Idealistic landing page: floating navigation, scroll reveal, setup tabs, FAQ accordion and eased anchor scrolling.
 (function () {
   'use strict';
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ---------- Navigation island gets more solid once the page scrolls ----------
   const nav = document.getElementById('nav');
 
   if (nav) {
@@ -15,7 +13,6 @@
     update();
   }
 
-  // ---------- Scroll reveal ----------
   const revealItems = document.querySelectorAll('.reveal');
 
   if ('IntersectionObserver' in window) {
@@ -36,7 +33,6 @@
     });
   }
 
-  // ---------- Eased scrolling for in-page links ----------
   let scrollFrame = null;
 
   function stopScroll() {
@@ -93,7 +89,6 @@
     history.pushState(null, '', url.hash);
   });
 
-  // ---------- Setup tabs ----------
   document.querySelectorAll('[data-tabs]').forEach(function (root) {
     const tabs = Array.from(root.querySelectorAll('[role="tab"]'));
     const panels = Array.from(root.querySelectorAll('[role="tabpanel"]'));
@@ -141,7 +136,6 @@
       });
     });
 
-    // Links in the platform cards can jump straight to the right tab
     const hash = window.location.hash.replace('#', '');
     const wanted = hash ? root.querySelector('#tab-' + hash) : null;
 
@@ -150,7 +144,6 @@
     }
   });
 
-  // ---------- FAQ: animated, one answer open at a time ----------
   function animateDetails(details, opening) {
     const summary = details.querySelector(':scope > summary');
     const startHeight = details.offsetHeight;

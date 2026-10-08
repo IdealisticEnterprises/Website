@@ -1,8 +1,4 @@
 <?php
-// Landing page of idealistic.ai. Everything it says (names, emails, links, plans, commands, FAQ) lives in the variables class
-// (IdealisticOfficeVariable, IdealisticOfficePlans and IdealisticOfficeWebsite), this file only lays it out.
-// The chat portal itself (demo, widget, sign-in, shared portals) is still rendered by index.php for every request that
-// carries portal parameters, e.g. /?in=web or /?id=...
 
 if (!class_exists('IdealisticOfficeVariable', false)) {
     require_once '/var/www/.structure/library/idealistic_office/init.php';
@@ -37,7 +33,6 @@ function io_price(float $amount): string
     return $amount == floor($amount) ? number_format($amount, 0, '.', ',') : number_format($amount, 2, '.', ',');
 }
 
-// The monthly plans, straight from the plans class. The cheapest plan uses its exact price because array keys cannot hold decimals.
 $plans = [];
 $isFirstPlan = true;
 
@@ -47,7 +42,8 @@ foreach (@IdealisticOfficePlans::PRICE_AND_CREDITS as $price => $credits) {
         'name' => IdealisticOfficePlans::NAMES[$position] ?? ('Plan ' . ($position + 1)),
         'price' => $isFirstPlan ? IdealisticOfficePlans::MINIMUM_PRICE : (float)$price,
         'credits' => $credits,
-        'extras' => $position >= IdealisticOfficePlans::CLUB_AND_STATISTICS_FROM_PLAN
+        'club' => $position >= IdealisticOfficePlans::CLUB_FROM_PLAN,
+        'logo_removal' => $position >= IdealisticOfficePlans::LOGO_REMOVAL_FROM_PLAN
     ];
     $isFirstPlan = false;
 }
@@ -158,6 +154,7 @@ $schemas = [
         <a href="#install">Deploy</a>
         <a href="#commands">Commands</a>
         <a href="#pricing">Pricing</a>
+        <a href="#data">Data</a>
         <a href="#faq">FAQ</a>
     </nav>
     <a class="button solid small" href="<?= io_e($tryUrl) ?>">Try it now</a>
@@ -296,12 +293,15 @@ $schemas = [
                             <li><?= io_e(IdealisticOfficePlans::FREE_TRIAL) ?></li>
                             <li>Deploy on Discord, Telegram, WhatsApp and the web chat widget</li>
                             <li>Configure from any app</li>
-                            <?php if ($plan['extras']) : ?>
+                            <?php if ($plan['club']) : ?>
                                 <li class="extra"><?= io_e(IdealisticOfficePlans::CLUB_NAME) ?></li>
-                                <li class="extra"><?= io_e(IdealisticOfficePlans::STATISTICS_PANEL_NAME) ?></li>
+                            <?php endif; ?>
+                            <?php if ($plan['logo_removal']) : ?>
+                                <li class="extra"><?= io_e(IdealisticOfficePlans::LOGO_REMOVAL_TEXT) ?></li>
+                            <?php else : ?>
+                                <li><?= io_e(IdealisticOfficePlans::LOGO_TEXT) ?></li>
                             <?php endif; ?>
                         </ul>
-                        <a class="button<?= $index === 0 ? ' solid' : '' ?>" href="<?= io_e($tryUrl) ?>">Start free trial</a>
                     </article>
                 <?php endforeach; ?>
                 <article class="island plan enterprise reveal" style="--i: <?= count($plans) ?>">
@@ -311,12 +311,39 @@ $schemas = [
                     <ul>
                         <li><?= io_e(IdealisticOfficeWebsite::ENTERPRISE_TEXT) ?></li>
                         <li class="extra"><?= io_e(IdealisticOfficePlans::CLUB_NAME) ?></li>
+                        <li class="extra"><?= io_e(IdealisticOfficePlans::LOGO_REMOVAL_TEXT) ?></li>
                         <li class="extra"><?= io_e(IdealisticOfficePlans::STATISTICS_PANEL_NAME) ?></li>
                     </ul>
                     <a class="button solid" href="mailto:<?= io_e($businessEmail) ?>?subject=<?= rawurlencode('Idealistic Enterprise') ?>"><?= io_e($businessEmail) ?></a>
                 </article>
             </div>
             <p class="fine-print"><?= io_e(IdealisticOfficePlans::CURRENCY) ?>. VAT: <?= io_e(IdealisticOfficePlans::VAT) ?>.</p>
+        </div>
+    </section>
+
+    <section id="data" class="reveal">
+        <div class="wrap">
+            <p class="label">Your data</p>
+            <h2><?= io_e(IdealisticOfficeWebsite::RETENTION_TITLE) ?></h2>
+            <p class="section-text"><?= io_e(IdealisticOfficeWebsite::RETENTION_TEXT) ?></p>
+            <div class="grid three">
+                <?php foreach (IdealisticOfficeWebsite::RETENTION_FACTS as $index => $fact) : ?>
+                    <article class="island step reveal" style="--i: <?= $index ?>">
+                        <span class="number"><?= io_e($fact['value']) ?></span>
+                        <h3><?= io_e($fact['unit']) ?></h3>
+                        <p><?= io_e($fact['text']) ?></p>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+            <div class="island promises reveal">
+                <?php foreach (IdealisticOfficeWebsite::RETENTION_PROMISES as $promise) : ?>
+                    <div>
+                        <strong><?= io_e($promise['title']) ?></strong>
+                        <p><?= io_e($promise['text']) ?></p>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <p class="fine-print">Read the full details in the <a href="<?= io_e(IdealisticOfficeVariable::PRIVACY_POLICY_URL) ?>">Privacy Policy</a>.</p>
         </div>
     </section>
 
@@ -353,7 +380,7 @@ $schemas = [
         <div class="wrap">
             <div class="grid two">
                 <article class="island human reveal">
-                    <p class="label">Human</p>
+                    <p class="label">Who builds it</p>
                     <h2><?= io_e(IdealisticOfficeWebsite::HUMAN_MADE_TITLE) ?></h2>
                     <p><?= io_e(IdealisticOfficeWebsite::HUMAN_MADE_TEXT) ?></p>
                 </article>
@@ -438,11 +465,13 @@ $schemas = [
                 <a href="<?= io_e(IdealisticOfficeVariable::YOUTUBE_URL) ?>">YouTube</a>
                 <a href="<?= io_e(IdealisticOfficeVariable::TERMS_OF_USE_URL) ?>">Terms of Use</a>
                 <a href="<?= io_e(IdealisticOfficeVariable::PRIVACY_POLICY_URL) ?>">Privacy Policy</a>
+                <a href="#data">Data retention</a>
                 <a href="<?= io_e(IdealisticOfficeVariable::USER_DATA_DELETION_INSTRUCTIONS_URL) ?>">Data deletion</a>
                 <a href="<?= io_e(IdealisticOfficeVariable::SPARTAN_URL) ?>">Spartan AntiCheat</a>
             </div>
         </div>
         <p class="copyright">&copy; <?= date('Y') ?> <a href="<?= io_e(IdealisticOfficeVariable::COMPANY_DETAILS) ?>"><?= io_e(IdealisticOfficeVariable::COMPANY_NAME) ?></a>, <?= io_e(IdealisticOfficeVariable::COMPANY_ADDRESS) ?>. All rights reserved. <a href="<?= io_e(IdealisticOfficeVariable::TRADEMARK_URL) ?>">EU trademark no. <?= io_e(IdealisticOfficeVariable::TRADEMARK_NUMBER) ?></a>.</p>
+        <p class="copyright"><?= io_e(IdealisticOfficeWebsite::TRANSLATE_NOTE) ?></p>
     </div>
 </footer>
 

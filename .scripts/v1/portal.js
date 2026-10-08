@@ -71,6 +71,22 @@
             transform: translateY(20px) scale(0.98) translateX(0);
         }
 
+        #idealistic-iframe-wrapper.io-down {
+            bottom: auto;
+            top: calc(100% + 15px);
+        }
+        .io-anchor-right #idealistic-iframe-wrapper.io-down {
+            transform-origin: top right;
+            transform: translateY(-20px) scale(0.98) translateX(calc(var(--cw, 54px) - 100%));
+        }
+        .io-anchor-left #idealistic-iframe-wrapper.io-down {
+            transform-origin: top left;
+            transform: translateY(-20px) scale(0.98) translateX(0);
+        }
+        #idealistic-iframe-wrapper.io-down [class^="io-resizer"] {
+            display: none !important;
+        }
+
         /* Open states */
         .io-anchor-right #idealistic-iframe-wrapper.io-open {
             opacity: 1;
@@ -149,19 +165,32 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease, box-shadow 0.2s ease, width 0.2s ease, border-radius 0.2s ease !important;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
             font-family: inherit !important;
         }
         #idealistic-toggle:hover {
-            transform: scale(1.03);
             background-color: rgba(255, 255, 255, 0.95);
             box-shadow: 0 6px 20px rgba(0,0,0,0.22) !important;
         }
         #idealistic-toggle:active {
-            transform: scale(0.97);
+            background-color: rgba(228, 228, 231, 0.95);
+        }
+        #idealistic-badge {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            width: 18px;
+            height: 18px;
+            display: none;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: #0a0c10;
+        }
+        #idealistic-widget-container.io-branded #idealistic-badge {
+            display: block;
         }
         .io-toggle-content {
             display: flex;
@@ -188,9 +217,7 @@
             padding: 0 !important;
         }
         #idealistic-toggle.io-btn-close {
-            width: 54px !important;
             padding: 0 !important;
-            border-radius: 0 !important;
         }
         #idealistic-toggle.io-btn-close .io-toggle-text {
             display: none !important;
@@ -245,8 +272,15 @@
         </div>
     `;
 
+    const badge = document.createElement('img');
+    badge.id = 'idealistic-badge';
+    badge.src = 'https://www.idealistic.ai/.images/favicon.svg';
+    badge.alt = '';
+    badge.setAttribute('aria-hidden', 'true');
+
     container.appendChild(wrapper);
     container.appendChild(toggleBtn);
+    container.appendChild(badge);
     document.body.appendChild(container);
 
     let isOpen = false;
@@ -268,18 +302,25 @@
         container.style.setProperty('--cw', '54px');
     }
 
-    // Dynamic width & height calculation based on open/closed state
-    const getEffectiveDimensions = () => {
-        const btnW = toggleBtn.offsetWidth || 54;
-        const btnH = toggleBtn.offsetHeight || 54;
-        if (!isOpen) return {w: btnW, h: btnH};
+    const getEffectiveDimensions = () => ({
+        w: toggleBtn.offsetWidth || 54,
+        h: toggleBtn.offsetHeight || 54
+    });
 
-        const wrapW = wrapper.offsetWidth || 380;
-        const wrapH = wrapper.offsetHeight || 600;
-        return {
-            w: Math.max(btnW, wrapW),
-            h: wrapH + 15 + btnH
-        };
+    let desiredHeight = 600;
+
+    const layoutWrapper = () => {
+        const rect = toggleBtn.getBoundingClientRect();
+        const above = rect.top - 15 - 10;
+        const below = window.innerHeight - rect.bottom - 15 - 10;
+        const down = above < Math.min(desiredHeight, 360) && below > above;
+        const space = Math.max(200, down ? below : above);
+
+        wrapper.classList.toggle('io-down', down);
+        wrapper.style.minWidth = Math.min(380, window.innerWidth - 40) + 'px';
+        wrapper.style.minHeight = '0px';
+        wrapper.style.maxHeight = space + 'px';
+        wrapper.style.height = Math.max(200, Math.min(Math.max(desiredHeight, 600), space)) + 'px';
     };
 
     const snapToBounds = () => {
@@ -329,6 +370,8 @@
         else container.style.left = currentPos.x + 'px';
         container.style.bottom = currentPos.y + 'px';
 
+        if (isOpen) layoutWrapper();
+
         setTimeout(() => {
             container.classList.remove('io-snap-transition');
         }, 400);
@@ -373,7 +416,6 @@
 
         const cSide = anchorSide === 'right' ? (parseInt(container.style.right) || 20) : (parseInt(container.style.left) || 20);
         const dynamicMaxW = window.innerWidth - cSide - 20;
-        const dynamicMaxH = window.innerHeight - (parseInt(container.style.bottom) || 20) - (toggleBtn.offsetHeight || 54) - 15 - 20;
 
         let newW = rStartW;
         let newH = rStartH;
@@ -386,11 +428,12 @@
 
         if (resizeDir.includes('top') || resizeDir.includes('both')) {
             newH = rStartH + (rStartY - clientY);
-            wrapper.style.height = Math.max(600, Math.min(newH, dynamicMaxH)) + 'px';
+            desiredHeight = newH;
+            layoutWrapper();
         }
 
         if (resizeDir.includes('left') || resizeDir.includes('right') || resizeDir.includes('both')) {
-            wrapper.style.width = Math.max(380, Math.min(newW, dynamicMaxW)) + 'px';
+            wrapper.style.width = Math.max(Math.min(380, window.innerWidth - 40), Math.min(newW, dynamicMaxW)) + 'px';
         }
     };
 
@@ -501,6 +544,7 @@
             }
             anchorSide = idealAnchor;
         }
+        if (isOpen) layoutWrapper();
     };
 
     const endDrag = () => {
@@ -523,6 +567,14 @@
 
     window.addEventListener('resize', snapToBounds);
 
+    window.addEventListener('message', (event) => {
+        if (event.origin !== 'https://www.idealistic.ai' || event.source !== iframe.contentWindow) return;
+        const data = event.data;
+        if (data && data.type === 'idealistic-widget') {
+            container.classList.toggle('io-branded', data.branding === true);
+        }
+    });
+
     toggleBtn.addEventListener('click', (e) => {
         if (wasDragging) {
             wasDragging = false;
@@ -531,11 +583,13 @@
 
         isOpen = !isOpen;
         if (isOpen) {
+            toggleBtn.style.width = toggleBtn.offsetWidth + 'px';
             wrapper.style.display = 'block';
             container.classList.remove('io-snap-transition');
+            layoutWrapper();
 
             requestAnimationFrame(() => {
-                snapToBounds(); // Trigger space calculations right before rendering visual open
+                snapToBounds();
                 wrapper.classList.add('io-open');
                 toggleBtn.classList.add('io-btn-close');
                 toggleBtn.innerHTML = iconClose;
@@ -543,6 +597,7 @@
         } else {
             wrapper.classList.remove('io-open');
             toggleBtn.classList.remove('io-btn-close');
+            toggleBtn.style.width = '';
             toggleBtn.innerHTML = `
                 <div class="io-toggle-content">
                     ${iconChat}

@@ -22,7 +22,6 @@
             deleteBtn: document.getElementById('delete-btn'),
             signoutBtn: document.getElementById('signout-btn'),
             signinBtn: document.getElementById('signin-btn'),
-            langBtn: document.getElementById('lang-btn'),
             previewDiv: document.getElementById('upload-preview')
         };
 
@@ -120,13 +119,6 @@
             }
         });
 
-        window.changeLanguage = function (lang) {
-            document.cookie = "io_lang=" + lang + "; path=/; max-age=31536000";
-            const url = new URL(window.location.href);
-            url.searchParams.set('lang_changed', '1');
-            window.location.href = url.toString();
-        };
-
         window.launchDemo = function () {
             const urlField = document.getElementById('demoUrlInput');
             let urlInput = urlField ? urlField.value.trim() : '';
@@ -143,59 +135,6 @@
                 }
             });
         }
-
-        window.recommendPlan = function () {
-            const visitorInput = document.getElementById('visitorCount');
-            let v = parseInt(visitorInput ? visitorInput.value : '0', 10) || 0;
-            if (v <= 0) {
-                alert(i18n.calc_invalid || 'Enter a valid number of visitors.');
-                return;
-            }
-            document.getElementById('calculator-section').classList.add('d-none');
-            document.getElementById('recommended-section').classList.remove('d-none');
-            document.getElementById('rec-visitors').innerText = v.toLocaleString();
-
-            let planId = 'plan-solo';
-            if (v > 3000 && v <= 6000) planId = 'plan-idea';
-            if (v > 6000) planId = 'plan-idealistic';
-
-            const container = document.getElementById('rec-card-container');
-            container.innerHTML = '';
-            const source = document.getElementById(planId);
-            if (source) {
-                const clone = source.cloneNode(true);
-                clone.classList.remove('col-lg-5', 'col-md-8');
-                clone.classList.add('col-12');
-                container.appendChild(clone);
-            }
-        };
-        window.resetCalculator = function () {
-            document.getElementById('calculator-section').classList.remove('d-none');
-            document.getElementById('recommended-section').classList.add('d-none');
-        };
-        const visitorCountInput = document.getElementById('visitorCount');
-        if (visitorCountInput) {
-            visitorCountInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    window.recommendPlan();
-                }
-            });
-        }
-        const defaultSoloSlot = document.getElementById('default-solo-card');
-        const soloTemplate = document.getElementById('plan-solo');
-        if (defaultSoloSlot && soloTemplate) {
-            const defaultSolo = soloTemplate.cloneNode(true);
-            defaultSolo.classList.remove('col-lg-5', 'col-md-8');
-            defaultSolo.classList.add('col-12');
-            defaultSoloSlot.appendChild(defaultSolo);
-        }
-
-        window.checkout = function (priceId) {
-            if (window.Paddle) {
-                Paddle.Checkout.open({items: [{priceId: priceId, quantity: 1}]});
-            }
-        };
 
         document.querySelectorAll('.embed-snippet-copy-btn').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -286,9 +225,7 @@
             });
         }
 
-        const reviewsScroll = document.getElementById('reviews-scroll-area');
         const iconsScroll = document.getElementById('icons-scroll-area');
-        if (reviewsScroll) initCarousel('reviews-scroll-area', 'reviews-dots', parseInt(reviewsScroll.dataset.originalCount || '0', 10));
         if (iconsScroll) initCarousel('icons-scroll-area', 'icons-dots', parseInt(iconsScroll.dataset.originalCount || '0', 10));
 
         const animWords = [
@@ -357,7 +294,7 @@
         };
 
         const toggleUtilityButtons = (hide) => {
-            [ui.deleteBtn, ui.signoutBtn, ui.signinBtn, ui.langBtn].forEach(btn => {
+            [ui.deleteBtn, ui.signoutBtn, ui.signinBtn].forEach(btn => {
                 if (!btn) return;
                 btn.classList.toggle('is-hidden', hide);
             });
@@ -441,13 +378,13 @@
                 const audioUrl = URL.createObjectURL(state.voiceBlob);
                 ui.previewDiv.innerHTML = '<div class="d-flex align-items-center bg-danger rounded-pill p-1 pe-3 mb-1">'
                     + '<audio src="' + audioUrl + '" controls class="me-2 rounded-pill" style="height: 35px; max-width: 200px;"></audio>'
-                    + '<i class="bi bi-x-circle-fill text-white fs-5" style="cursor:pointer" onclick="clearVoice()"></i></div>';
+                    + '<i class="bi bi-x-square-fill text-white fs-5" style="cursor:pointer" onclick="clearVoice()"></i></div>';
             } else if (state.selectedFiles.length > 0) {
                 ui.input.disabled = false;
                 setPlaceholder(config.userTypePlaceholder);
                 toggleUtilityButtons(true);
                 ui.previewDiv.innerHTML = '<span class="badge bg-secondary text-white p-2 fs-6 mb-1 me-1"><i class="bi bi-file-earmark"></i> '
-                    + state.selectedFiles[0].name + ' <i class="bi bi-x-circle ms-2" style="cursor:pointer" onclick="clearFile()"></i></span>';
+                    + state.selectedFiles[0].name + ' <i class="bi bi-x-square ms-2" style="cursor:pointer" onclick="clearFile()"></i></span>';
             } else {
                 if (!state.isThinking) {
                     ui.input.disabled = false;
@@ -903,18 +840,6 @@
                 url.searchParams.delete('signed_out');
                 url.searchParams.delete('signed_in');
                 window.history.replaceState(null, '', url);
-            }
-        }
-
-        if (config.isDemo) {
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isAndroid = ua.toLowerCase().indexOf("android") > -1;
-            const isAndroidWebView = ua.toLowerCase().indexOf("; wv)") > -1 || (isAndroid && ua.toLowerCase().indexOf("version/") > -1);
-            const isIos = /iPhone|iPad|iPod/i.test(ua);
-            const isIosWebView = isIos && !/Safari/i.test(ua);
-            if (isAndroidWebView || isIosWebView) {
-                const pricingBox = document.getElementById('pricingBoxContainer');
-                if (pricingBox) pricingBox.style.display = 'none';
             }
         }
     });
