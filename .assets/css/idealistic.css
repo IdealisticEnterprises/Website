@@ -808,3 +808,8 @@ input[type=number] { -moz-appearance: textfield; }
     .lead { font-size: 1rem; }
     h1.fs-3 { font-size: 1.5rem !important; }
 }
+
+/* Square design language: no rounded corners anywhere in the portal, in line with the rest of the website */
+*, *::before, *::after {
+    border-radius: 0 !important;
+}

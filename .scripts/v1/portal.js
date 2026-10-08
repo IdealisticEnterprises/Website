@@ -51,7 +51,7 @@
             max-height: calc(100vh - 100px);
             max-width: calc(100vw - 40px);
             border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 18px;
+            border-radius: 0;
             box-shadow: 0 16px 40px rgba(0,0,0,0.5);
             background: #09090b;
             display: none;
@@ -138,7 +138,7 @@
             height: 54px;
             padding: 0 20px 0 16px !important;
             margin: 0 !important;
-            border-radius: 30px;
+            border-radius: 0;
             background-color: rgba(244, 244, 245, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
@@ -190,7 +190,7 @@
         #idealistic-toggle.io-btn-close {
             width: 54px !important;
             padding: 0 !important;
-            border-radius: 50% !important;
+            border-radius: 0 !important;
         }
         #idealistic-toggle.io-btn-close .io-toggle-text {
             display: none !important;
