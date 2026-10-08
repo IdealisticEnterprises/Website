@@ -1,13 +1,23 @@
 <?php
-// Landing page of idealistic.ai. The chat portal itself (demo, widget, sign-in, shared portals) is still rendered by
-// index.php for every request that carries portal parameters, e.g. /?try=1 or /?id=...
+// Landing page of idealistic.ai. Everything it says (names, emails, links, plans, commands, FAQ) lives in the variables class
+// (IdealisticOfficeVariable, IdealisticOfficePlans and IdealisticOfficeWebsite), this file only lays it out.
+// The chat portal itself (demo, widget, sign-in, shared portals) is still rendered by index.php for every request that
+// carries portal parameters, e.g. /?in=web or /?id=...
 
-$siteUrl = 'https://www.idealistic.ai/';
-$assetBase = 'https://www.idealistic.ai';
-$email = 'office@idealistic.ai';
-$tryUrl = $siteUrl . '?try=1';
-$title = 'Idealistic AI | Where humans and AI talk in harmony';
-$description = 'Add Idealistic to Discord, Telegram, WhatsApp or your website. Humans talk, AI keeps track and only speaks when asked. Settle disputes, resolve disagreements and bring chats back to life.';
+if (!class_exists('IdealisticOfficeVariable', false)) {
+    require_once '/var/www/.structure/library/idealistic_office/init.php';
+}
+
+$siteUrl = IdealisticOfficeVariable::COMPANY_WEBSITE_URL . '/';
+$assetBase = IdealisticOfficeVariable::COMPANY_WEBSITE_URL;
+$supportEmail = IdealisticOfficeVariable::SUPPORT_EMAIL;
+$businessEmail = IdealisticOfficeVariable::BUSINESS_EMAIL;
+$tryUrl = IdealisticOfficeVariable::PORTAL_WEB_URL;
+$title = IdealisticOfficeWebsite::TITLE;
+$description = IdealisticOfficeWebsite::DESCRIPTION;
+$groups = IdealisticOfficeWebsite::PLATFORM_GROUPS;
+$currencySymbols = ['EUR' => '€', 'USD' => '$', 'GBP' => '£'];
+$currency = $currencySymbols[IdealisticOfficePlans::CURRENCY] ?? (IdealisticOfficePlans::CURRENCY . ' ');
 
 function io_e($value): string
 {
@@ -22,97 +32,25 @@ function io_asset(string $path): string
     return $assetBase . '/' . ltrim($path, '/') . ($version ? '?v=' . $version : '');
 }
 
-// Where Idealistic can be installed, grouped like the sections of the page
-$groups = [
-    [
-        'id' => 'install',
-        'label' => 'Install',
-        'title' => 'Add it where people already talk.',
-        'text' => 'No new place to go. Idealistic joins the conversations you already have.',
-        'items' => [
-            ['key' => 'discord', 'name' => 'Discord', 'mark' => 'D', 'color' => '#5865F2', 'action' => 'Add to Discord', 'url' => $siteUrl . 'discord', 'text' => 'Bring it into your server and let everyone keep talking as usual.'],
-            ['key' => 'telegram', 'name' => 'Telegram', 'mark' => 'T', 'color' => '#26A5E4', 'action' => 'Add to Telegram', 'url' => $siteUrl . 'telegram', 'text' => 'Add it to a group or chat and keep the whole thread on track.'],
-            ['key' => 'whatsapp', 'name' => 'WhatsApp', 'mark' => 'W', 'color' => '#25D366', 'action' => 'Add to WhatsApp', 'url' => $siteUrl . 'whatsapp', 'text' => 'The group chat everybody lives in, finally with a memory.'],
-            ['key' => 'widget', 'name' => 'Web chat widget', 'mark' => '</>', 'color' => '#3B82F6', 'action' => 'Install the widget', 'url' => '#setup', 'text' => 'One line of code puts Idealistic on your own website.']
-        ]
-    ],
-    [
-        'id' => 'connect',
-        'label' => 'Connect',
-        'title' => 'And everywhere else they reach you.',
-        'text' => 'Configure more channels and keep every conversation in one place.',
-        'items' => [
-            ['key' => 'messenger', 'name' => 'Messenger', 'mark' => 'M', 'color' => '#0A7CFF', 'action' => 'Connect Messenger', 'url' => $siteUrl . 'messenger', 'text' => 'Meet people in the app they already open every day.'],
-            ['key' => 'instagram', 'name' => 'Instagram', 'mark' => 'I', 'color' => '#E1306C', 'action' => 'Connect Instagram', 'url' => $siteUrl . 'instagram', 'text' => 'Direct messages become conversations that never get lost.'],
-            ['key' => 'email', 'name' => 'Email', 'mark' => '@', 'color' => '#9AA4B5', 'action' => $email, 'url' => 'mailto:' . $email, 'text' => 'Plain email works too. Write to us and talk it through.']
-        ]
-    ],
-    [
-        'id' => 'apps',
-        'label' => 'Apps',
-        'title' => 'Or take it with you.',
-        'text' => 'Use Idealistic as an app, on any device.',
-        'items' => [
-            ['key' => 'ios', 'name' => 'iOS', 'mark' => 'iOS', 'color' => '#F5F7FB', 'action' => 'Get it for iOS', 'url' => $siteUrl . 'iOS', 'text' => 'For iPhone and iPad.'],
-            ['key' => 'android', 'name' => 'Android', 'mark' => 'A', 'color' => '#3DDC84', 'action' => 'Get it for Android', 'url' => $siteUrl . 'android', 'text' => 'For phones and tablets.'],
-            ['key' => 'web', 'name' => 'Web app', 'mark' => 'W', 'color' => '#60A5FA', 'action' => 'Open the web app', 'url' => $tryUrl, 'text' => 'Nothing to install. Just open it and start talking.']
-        ]
-    ]
-];
+function io_price(float $amount): string
+{
+    return $amount == floor($amount) ? number_format($amount, 0, '.', ',') : number_format($amount, 2, '.', ',');
+}
 
-$steps = [
-    ['number' => '01', 'title' => 'Humans talk.', 'text' => 'Conversations stay between people, exactly like before. Nobody is interrupted and nothing changes about how you talk.'],
-    ['number' => '02', 'title' => 'AI tracks.', 'text' => 'Quietly, in the background, Idealistic keeps track of what was said, what was decided and what was promised.'],
-    ['number' => '03', 'title' => 'AI speaks when asked.', 'text' => 'The AI never starts a conversation. Its input is only ever added through human interaction, when someone asks.']
-];
+// The monthly plans, straight from the plans class. The cheapest plan uses its exact price because array keys cannot hold decimals.
+$plans = [];
+$isFirstPlan = true;
 
-$fixes = [
-    ['word' => 'Disputes', 'text' => 'Who said what, and who agreed to what? The conversation remembers, so nobody has to scroll for hours or argue about it.'],
-    ['word' => 'Disagreements', 'text' => 'When people see things differently, an impartial record of the discussion helps everyone find common ground faster.'],
-    ['word' => 'Silent chats', 'text' => 'Chats go quiet when nothing moves forward. With something that keeps track, there is always a next thing to pick up.']
-];
-
-$tabs = [
-    ['id' => 'discord', 'name' => 'Discord', 'steps' => [
-        'Press <strong>Add to Discord</strong> and pick the server you want to use it in.',
-        'Keep chatting as usual. Idealistic stays quiet and keeps track.',
-        'Whenever someone asks it something, it answers. That is the only time it speaks.'
-    ], 'link' => [$siteUrl . 'discord', 'Add to Discord']],
-    ['id' => 'telegram', 'name' => 'Telegram', 'steps' => [
-        'Press <strong>Add to Telegram</strong> and choose the group or chat.',
-        'Keep chatting as usual. Idealistic stays quiet and keeps track.',
-        'Whenever someone asks it something, it answers.'
-    ], 'link' => [$siteUrl . 'telegram', 'Add to Telegram']],
-    ['id' => 'whatsapp', 'name' => 'WhatsApp', 'steps' => [
-        'Press <strong>Add to WhatsApp</strong> and open the chat.',
-        'Keep chatting as usual. Idealistic stays quiet and keeps track.',
-        'Whenever someone asks it something, it answers.'
-    ], 'link' => [$siteUrl . 'whatsapp', 'Add to WhatsApp']],
-    ['id' => 'widget', 'name' => 'Web chat widget', 'steps' => [
-        'Paste this line just before the closing <code>&lt;/body&gt;</code> tag of your website.',
-        'Replace <code>YOUR_PORTAL_ID</code> with the identifier of your portal.',
-        'A chat button appears on your website. That is all.'
-    ], 'code' => '<script src="https://www.idealistic.ai/.scripts/v1/portal.js" data-portal="YOUR_PORTAL_ID" id="idealistic-script" defer></script>', 'link' => [$tryUrl, 'Try it first']],
-    ['id' => 'more', 'name' => 'Messenger, Instagram & email', 'steps' => [
-        'Open <a href="' . $siteUrl . 'messenger">Messenger</a> or <a href="' . $siteUrl . 'instagram">Instagram</a> to start a conversation.',
-        'Prefer email? Write to <a href="mailto:' . $email . '">' . $email . '</a>.',
-        'Everything you talk about stays connected to the same place.'
-    ], 'link' => ['mailto:' . $email, 'Email us']],
-    ['id' => 'apps', 'name' => 'iOS, Android & web app', 'steps' => [
-        'Get the app for <a href="' . $siteUrl . 'iOS">iOS</a> or <a href="' . $siteUrl . 'android">Android</a>.',
-        'Or open the <a href="' . $tryUrl . '">web app</a> in any browser, nothing to install.',
-        'Start talking. Idealistic keeps track.'
-    ], 'link' => [$tryUrl, 'Open the web app']]
-];
-
-$faq = [
-    ['q' => 'What is Idealistic?', 'a' => 'A way for humans to communicate harmoniously with AI. You talk with other people as usual, the AI keeps track of the conversation, and it only joins in when a human asks it to.'],
-    ['q' => 'Does the AI ever talk on its own?', 'a' => 'No. The AI never starts a conversation and never interrupts. Its input is only added through human interaction.'],
-    ['q' => 'Where can I use it?', 'a' => 'On Discord, Telegram, WhatsApp and as a chat widget on your own website. You can also connect Messenger, Instagram and email, or use the iOS, Android and web apps.'],
-    ['q' => 'How can it settle a dispute?', 'a' => 'Because it keeps track of what was said and decided, anyone can ask what was actually agreed instead of relying on memory. The record is the same for everybody.'],
-    ['q' => 'What happens to my data?', 'a' => 'Read the <a href="' . $siteUrl . 'policies/privacy_policy/">Privacy Policy</a> and the <a href="' . $siteUrl . 'terms/terms_of_use/">Terms of Use</a>. You can also ask for your data to be deleted, see the <a href="' . $siteUrl . 'instructions/user_data_deletion/">data deletion instructions</a>.'],
-    ['q' => 'How do I get in touch?', 'a' => 'Write to <a href="mailto:' . $email . '">' . $email . '</a>.']
-];
+foreach (@IdealisticOfficePlans::PRICE_AND_CREDITS as $price => $credits) {
+    $position = count($plans);
+    $plans[] = [
+        'name' => IdealisticOfficePlans::NAMES[$position] ?? ('Plan ' . ($position + 1)),
+        'price' => $isFirstPlan ? IdealisticOfficePlans::MINIMUM_PRICE : (float)$price,
+        'credits' => $credits,
+        'extras' => $position >= IdealisticOfficePlans::CLUB_AND_STATISTICS_FROM_PLAN
+    ];
+    $isFirstPlan = false;
+}
 
 $schemas = [
     [
@@ -122,12 +60,15 @@ $schemas = [
                 '@type' => 'Organization',
                 '@id' => $siteUrl . '#organization',
                 'name' => 'Idealistic AI',
-                'legalName' => 'Idealistic OÜ',
+                'legalName' => IdealisticOfficeVariable::COMPANY_NAME,
                 'url' => $siteUrl,
                 'logo' => $assetBase . '/.images/logoSquare.png',
-                'email' => $email,
-                'contactPoint' => [['@type' => 'ContactPoint', 'email' => $email, 'contactType' => 'customer support']],
-                'sameAs' => ['https://www.youtube.com/@IdealisticAI']
+                'email' => $supportEmail,
+                'contactPoint' => [
+                    ['@type' => 'ContactPoint', 'email' => $supportEmail, 'contactType' => 'customer support'],
+                    ['@type' => 'ContactPoint', 'email' => $businessEmail, 'contactType' => 'sales']
+                ],
+                'sameAs' => [IdealisticOfficeVariable::GITHUB_URL, IdealisticOfficeVariable::YOUTUBE_URL]
             ],
             [
                 '@type' => 'WebSite',
@@ -145,7 +86,16 @@ $schemas = [
                 'image' => $assetBase . '/.images/social.png',
                 'applicationCategory' => 'CommunicationApplication',
                 'operatingSystem' => 'iOS, Android, Web, Discord, Telegram, WhatsApp',
-                'publisher' => ['@id' => $siteUrl . '#organization']
+                'publisher' => ['@id' => $siteUrl . '#organization'],
+                'offers' => array_map(function ($plan) {
+                    return [
+                        '@type' => 'Offer',
+                        'name' => $plan['name'] . ', ' . IdealisticOfficePlans::TYPE . ', ' . number_format($plan['credits']) . ' credits',
+                        'price' => number_format($plan['price'], 2, '.', ''),
+                        'priceCurrency' => IdealisticOfficePlans::CURRENCY,
+                        'availability' => 'https://schema.org/InStock'
+                    ];
+                }, $plans)
             ]
         ]
     ],
@@ -154,7 +104,7 @@ $schemas = [
         '@type' => 'FAQPage',
         'mainEntity' => array_map(function ($item) {
             return ['@type' => 'Question', 'name' => $item['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($item['a'])]];
-        }, $faq)
+        }, IdealisticOfficeWebsite::FAQ)
     ]
 ];
 ?>
@@ -205,8 +155,9 @@ $schemas = [
     </a>
     <nav aria-label="Main">
         <a href="#how">How it works</a>
-        <a href="#install">Install</a>
-        <a href="#setup">Setup</a>
+        <a href="#install">Deploy</a>
+        <a href="#commands">Commands</a>
+        <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
     </nav>
     <a class="button solid small" href="<?= io_e($tryUrl) ?>">Try it now</a>
@@ -218,17 +169,30 @@ $schemas = [
         <div class="wrap">
             <p class="eyebrow">Discord &middot; Telegram &middot; WhatsApp &middot; Web</p>
             <h1>Humans talk.<br><span>AI keeps track.</span></h1>
-            <p class="lead">Idealistic is the way for people and AI to communicate in harmony. Add it to the chats you already have. Everyone keeps talking, the AI quietly keeps track, and it only speaks when a human asks.</p>
+            <p class="lead"><?= io_e(IdealisticOfficeWebsite::HERO_LEAD) ?></p>
             <div class="actions">
-                <a class="button solid large" href="<?= io_e($siteUrl) ?>discord">Add to Discord</a>
+                <a class="button solid large" href="<?= io_e(IdealisticOfficeVariable::DISCORD_APP_URL) ?>">Add to Discord</a>
                 <a class="button large" href="<?= io_e($tryUrl) ?>">Try it now</a>
             </div>
-            <div class="island strip" aria-label="Works with">
-                <span>Works with</span>
+            <div class="island strip" aria-label="Where it works">
                 <?php foreach ($groups as $group) : ?>
-                    <?php foreach ($group['items'] as $item) : ?>
-                        <a href="<?= io_e($item['url']) ?>"><?= io_e($item['name']) ?></a>
-                    <?php endforeach; ?>
+                    <span><?= io_e($group['id'] === 'install' ? 'Deploy on' : 'Configure from') ?></span>
+                    <?php if ($group['id'] === 'install') : ?>
+                        <?php foreach ($group['items'] as $item) : ?>
+                            <a href="<?= io_e($item['url']) ?>"><?= io_e($item['name']) ?></a>
+                        <?php endforeach; ?>
+                    <?php else : ?>
+                        <a href="#configure">Every app</a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+            <div class="island trust" aria-label="About the company">
+                <?php foreach (IdealisticOfficeWebsite::TRUST as $item) : ?>
+                    <div>
+                        <strong><?= io_e($item['title']) ?></strong>
+                        <p><?= io_e($item['text']) ?></p>
+                        <a href="<?= io_e($item['url']) ?>"><?= io_e($item['label']) ?> <i aria-hidden="true">&rarr;</i></a>
+                    </div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -239,7 +203,7 @@ $schemas = [
             <p class="label">How it works</p>
             <h2>A conversation with a memory.</h2>
             <div class="grid three">
-                <?php foreach ($steps as $index => $step) : ?>
+                <?php foreach (IdealisticOfficeWebsite::STEPS as $index => $step) : ?>
                     <article class="island step reveal" style="--i: <?= $index ?>">
                         <span class="number"><?= io_e($step['number']) ?></span>
                         <h3><?= io_e($step['title']) ?></h3>
@@ -258,7 +222,7 @@ $schemas = [
                 </div>
                 <div class="demo-text">
                     <h3>It never joins uninvited.</h3>
-                    <p>Idealistic listens and keeps track, but it only answers after a human asks. Everything it says is triggered by a person, so it never talks over anyone and never makes up a conversation of its own.</p>
+                    <p>Idealistic listens and keeps track, but it only answers after a human tags it. Everything it says is triggered by a person, so it never talks over anyone and never makes up a conversation of its own.</p>
                 </div>
             </div>
         </div>
@@ -269,7 +233,7 @@ $schemas = [
             <p class="label">What it fixes</p>
             <h2>Settle it. Calm it down. Bring it back to life.</h2>
             <div class="grid three">
-                <?php foreach ($fixes as $index => $fix) : ?>
+                <?php foreach (IdealisticOfficeWebsite::FIXES as $index => $fix) : ?>
                     <article class="island fix reveal" style="--i: <?= $index ?>">
                         <h3><?= io_e($fix['word']) ?></h3>
                         <p><?= io_e($fix['text']) ?></p>
@@ -299,18 +263,75 @@ $schemas = [
         </section>
     <?php endforeach; ?>
 
+    <section id="commands" class="reveal">
+        <div class="wrap">
+            <p class="label">Commands</p>
+            <h2><?= io_e(IdealisticOfficeWebsite::COMMANDS_TITLE) ?></h2>
+            <p class="section-text"><?= io_e(IdealisticOfficeWebsite::COMMANDS_TEXT) ?></p>
+            <div class="island commands">
+                <?php foreach (IdealisticOfficeWebsite::COMMANDS as $command) : ?>
+                    <div class="command">
+                        <span class="command-platform"><?= io_e($command['platform']) ?></span>
+                        <code><?= io_e($command['command']) ?></code>
+                        <p><?= io_e($command['text']) ?></p>
+                        <small><?= io_e($command['requires']) ?></small>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="reveal">
+        <div class="wrap">
+            <p class="label">Pricing</p>
+            <h2>Start free for <?= io_e(preg_replace('/ free trial$/', '', IdealisticOfficePlans::FREE_TRIAL)) ?>.</h2>
+            <p class="section-text"><?= io_e(IdealisticOfficePlans::TYPE) ?>. Pick the amount of credits that fits how much your chats talk to Idealistic.</p>
+            <div class="grid four plans">
+                <?php foreach ($plans as $index => $plan) : ?>
+                    <article class="island plan reveal" style="--i: <?= $index ?>">
+                        <h3 class="plan-name"><?= io_e($plan['name']) ?></h3>
+                        <p class="plan-credits"><?= io_e(number_format($plan['credits'])) ?> credits</p>
+                        <p class="plan-price"><span><?= io_e($currency) ?></span><?= io_e(io_price($plan['price'])) ?><small>/ month</small></p>
+                        <ul>
+                            <li><?= io_e(IdealisticOfficePlans::FREE_TRIAL) ?></li>
+                            <li>Deploy on Discord, Telegram, WhatsApp and the web chat widget</li>
+                            <li>Configure from any app</li>
+                            <?php if ($plan['extras']) : ?>
+                                <li class="extra"><?= io_e(IdealisticOfficePlans::CLUB_NAME) ?></li>
+                                <li class="extra"><?= io_e(IdealisticOfficePlans::STATISTICS_PANEL_NAME) ?></li>
+                            <?php endif; ?>
+                        </ul>
+                        <a class="button<?= $index === 0 ? ' solid' : '' ?>" href="<?= io_e($tryUrl) ?>">Start free trial</a>
+                    </article>
+                <?php endforeach; ?>
+                <article class="island plan enterprise reveal" style="--i: <?= count($plans) ?>">
+                    <h3 class="plan-name"><?= io_e(IdealisticOfficeWebsite::ENTERPRISE_TITLE) ?></h3>
+                    <p class="plan-credits">By email only</p>
+                    <p class="plan-price plan-custom">Custom</p>
+                    <ul>
+                        <li><?= io_e(IdealisticOfficeWebsite::ENTERPRISE_TEXT) ?></li>
+                        <li class="extra"><?= io_e(IdealisticOfficePlans::CLUB_NAME) ?></li>
+                        <li class="extra"><?= io_e(IdealisticOfficePlans::STATISTICS_PANEL_NAME) ?></li>
+                    </ul>
+                    <a class="button solid" href="mailto:<?= io_e($businessEmail) ?>?subject=<?= rawurlencode('Idealistic Enterprise') ?>"><?= io_e($businessEmail) ?></a>
+                </article>
+            </div>
+            <p class="fine-print"><?= io_e(IdealisticOfficePlans::CURRENCY) ?>. VAT: <?= io_e(IdealisticOfficePlans::VAT) ?>.</p>
+        </div>
+    </section>
+
     <section id="setup" class="reveal">
         <div class="wrap">
             <p class="label">Setup</p>
             <h2>Up and running in a minute.</h2>
             <div class="island setup" data-tabs>
                 <div class="tablist" role="tablist" aria-label="Choose where to set it up">
-                    <?php foreach ($tabs as $index => $tab) : ?>
+                    <?php foreach (IdealisticOfficeWebsite::SETUP_TABS as $index => $tab) : ?>
                         <button type="button" role="tab" id="tab-<?= io_e($tab['id']) ?>" aria-controls="panel-<?= io_e($tab['id']) ?>"
                                 aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"><?= io_e($tab['name']) ?></button>
                     <?php endforeach; ?>
                 </div>
-                <?php foreach ($tabs as $index => $tab) : ?>
+                <?php foreach (IdealisticOfficeWebsite::SETUP_TABS as $index => $tab) : ?>
                     <div class="tabpanel" role="tabpanel" id="panel-<?= io_e($tab['id']) ?>" aria-labelledby="tab-<?= io_e($tab['id']) ?>"<?= $index === 0 ? '' : ' data-inactive' ?>>
                         <h3 class="print-title"><?= io_e($tab['name']) ?></h3>
                         <ol>
@@ -328,11 +349,40 @@ $schemas = [
         </div>
     </section>
 
+    <section id="open-source" class="reveal">
+        <div class="wrap">
+            <div class="grid two">
+                <article class="island human reveal">
+                    <p class="label">Human</p>
+                    <h2><?= io_e(IdealisticOfficeWebsite::HUMAN_MADE_TITLE) ?></h2>
+                    <p><?= io_e(IdealisticOfficeWebsite::HUMAN_MADE_TEXT) ?></p>
+                </article>
+                <article class="island opensource reveal" style="--i: 1">
+                    <p class="label">Open source</p>
+                    <h2><?= io_e(IdealisticOfficeWebsite::OPEN_SOURCE_TITLE) ?></h2>
+                    <p><?= io_e(IdealisticOfficeWebsite::OPEN_SOURCE_TEXT) ?></p>
+                    <ul class="repos">
+                        <?php foreach (IdealisticOfficeWebsite::REPOSITORIES as $repository) : ?>
+                            <li>
+                                <a href="<?= io_e($repository['url']) ?>">
+                                    <strong><?= io_e($repository['name']) ?></strong>
+                                    <span><?= io_e($repository['text']) ?></span>
+                                    <em><?= io_e($repository['language']) ?></em>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <a class="button" href="<?= io_e(IdealisticOfficeVariable::GITHUB_URL) ?>">View on GitHub</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
     <section id="faq" class="reveal">
         <div class="wrap narrow">
             <p class="label">FAQ</p>
             <h2>Good questions.</h2>
-            <?php foreach ($faq as $item) : ?>
+            <?php foreach (IdealisticOfficeWebsite::FAQ as $item) : ?>
                 <details class="island faq" data-accordion="faq">
                     <summary><?= io_e($item['q']) ?></summary>
                     <div class="faq-body"><p><?= $item['a'] ?></p></div>
@@ -347,7 +397,7 @@ $schemas = [
                 <h2>Make your chat alive again.</h2>
                 <p>Add Idealistic in a minute. Everyone keeps talking. The AI keeps track.</p>
                 <div class="actions center">
-                    <a class="button solid large" href="<?= io_e($siteUrl) ?>discord">Add to Discord</a>
+                    <a class="button solid large" href="<?= io_e(IdealisticOfficeVariable::DISCORD_APP_URL) ?>">Add to Discord</a>
                     <a class="button large" href="<?= io_e($tryUrl) ?>">Try it now</a>
                 </div>
             </div>
@@ -363,32 +413,36 @@ $schemas = [
                     <img src="<?= io_e($assetBase) ?>/.images/logoWhite.svg" alt="" width="30" height="30" loading="lazy">
                     <span>Idealistic</span>
                 </a>
-                <p>Where humans and AI talk in harmony.</p>
-                <p><a href="mailto:<?= io_e($email) ?>"><?= io_e($email) ?></a></p>
+                <p><?= io_e(IdealisticOfficeWebsite::TAGLINE) ?>.</p>
+                <p>Support: <a href="mailto:<?= io_e($supportEmail) ?>"><?= io_e($supportEmail) ?></a><br>
+                    <small><?= io_e(IdealisticOfficeVariable::SUPPORT_RESPONSE_NOTE) ?></small></p>
+                <p>Business &amp; Enterprise: <a href="mailto:<?= io_e($businessEmail) ?>"><?= io_e($businessEmail) ?></a></p>
             </div>
             <div>
-                <h4>Install</h4>
-                <a href="<?= io_e($siteUrl) ?>discord">Discord</a>
-                <a href="<?= io_e($siteUrl) ?>telegram">Telegram</a>
-                <a href="<?= io_e($siteUrl) ?>whatsapp">WhatsApp</a>
+                <h4>Deploy</h4>
+                <a href="<?= io_e(IdealisticOfficeVariable::DISCORD_APP_URL) ?>">Discord</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::TELEGRAM_APP_URL) ?>">Telegram</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::WHATSAPP_APP_URL) ?>">WhatsApp</a>
                 <a href="#setup">Web chat widget</a>
             </div>
             <div>
-                <h4>Connect</h4>
-                <a href="<?= io_e($siteUrl) ?>messenger">Messenger</a>
-                <a href="<?= io_e($siteUrl) ?>instagram">Instagram</a>
-                <a href="<?= io_e($siteUrl) ?>iOS">iOS</a>
-                <a href="<?= io_e($siteUrl) ?>android">Android</a>
+                <h4>Configure</h4>
+                <a href="<?= io_e(IdealisticOfficeVariable::MESSENGER_APP_URL) ?>">Messenger</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::INSTAGRAM_APP_URL) ?>">Instagram</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::IOS_APP_URL) ?>">iOS</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::ANDROID_APP_URL) ?>">Android</a>
             </div>
             <div>
                 <h4>Company</h4>
-                <a href="<?= io_e($siteUrl) ?>terms/terms_of_use/">Terms of Use</a>
-                <a href="<?= io_e($siteUrl) ?>policies/privacy_policy/">Privacy Policy</a>
-                <a href="<?= io_e($siteUrl) ?>instructions/user_data_deletion/">Data deletion</a>
-                <a href="https://spartan.top">Spartan AntiCheat</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::GITHUB_URL) ?>">GitHub</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::YOUTUBE_URL) ?>">YouTube</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::TERMS_OF_USE_URL) ?>">Terms of Use</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::PRIVACY_POLICY_URL) ?>">Privacy Policy</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::USER_DATA_DELETION_INSTRUCTIONS_URL) ?>">Data deletion</a>
+                <a href="<?= io_e(IdealisticOfficeVariable::SPARTAN_URL) ?>">Spartan AntiCheat</a>
             </div>
         </div>
-        <p class="copyright">&copy; <?= date('Y') ?> Idealistic OÜ. All rights reserved.</p>
+        <p class="copyright">&copy; <?= date('Y') ?> <a href="<?= io_e(IdealisticOfficeVariable::COMPANY_DETAILS) ?>"><?= io_e(IdealisticOfficeVariable::COMPANY_NAME) ?></a>, <?= io_e(IdealisticOfficeVariable::COMPANY_ADDRESS) ?>. All rights reserved. <a href="<?= io_e(IdealisticOfficeVariable::TRADEMARK_URL) ?>">EU trademark no. <?= io_e(IdealisticOfficeVariable::TRADEMARK_NUMBER) ?></a>.</p>
     </div>
 </footer>
 

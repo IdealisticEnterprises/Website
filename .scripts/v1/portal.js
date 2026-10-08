@@ -101,13 +101,13 @@
         .io-resizer-tl {
             left: 0;
             cursor: nwse-resize;
-            border-top-left-radius: 18px;
+            border-top-left-radius: 0;
             background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 15%, transparent 15%);
         }
         .io-resizer-tr {
             right: 0;
             cursor: nesw-resize;
-            border-top-right-radius: 18px;
+            border-top-right-radius: 0;
             background: linear-gradient(-135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 15%, transparent 15%);
         }
         .io-resizer-t {

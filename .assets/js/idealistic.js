@@ -367,8 +367,8 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'd-flex w-100 thinking-wrapper anim-slide-up mb-3';
             wrapper.innerHTML = '<div class="msg-bubble msg-assistant d-flex flex-column justify-content-center" style="width: 260px; height: 72px; gap: 10px;">'
-                + '<div class="skeleton-block" style="width: 100%; height: 14px; border-radius: 4px;"></div>'
-                + '<div class="skeleton-block" style="width: 65%; height: 14px; border-radius: 4px;"></div></div>';
+                + '<div class="skeleton-block" style="width: 100%; height: 14px; border-radius: 0;"></div>'
+                + '<div class="skeleton-block" style="width: 65%; height: 14px; border-radius: 0;"></div></div>';
             ui.box.appendChild(wrapper);
             smoothScrollToBottom(forceScroll);
             state.isThinking = true;
