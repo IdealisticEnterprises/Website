@@ -292,12 +292,14 @@
             ui.input.dataset.phSpaced = text + "    \u2022    ";
         };
 
-        const updateMicVisibility = () => {
-            if (!ui.micBtn) return;
+        const updateInputButtons = () => {
             const hasText = ui.input.value.trim().length > 0;
-            const busy = state.isThinking || state.selectedFiles.length > 0 || !!state.voiceBlob;
-            const shouldHide = hasText || busy;
-            ui.micBtn.classList.toggle('is-hidden', shouldHide);
+            const hasAttachment = state.selectedFiles.length > 0 || !!state.voiceBlob;
+            const busy = state.isThinking || hasAttachment;
+            ui.btn.classList.toggle('is-hidden', !(hasText || busy));
+            if (ui.micBtn) {
+                ui.micBtn.classList.toggle('is-hidden', hasText || busy);
+            }
         };
 
         const toggleUtilityButtons = (hide) => {
@@ -319,7 +321,7 @@
             ui.input.disabled = true;
             ui.btn.disabled = true;
             setPlaceholder(i18n.chat_wait_reply || 'Wait for the reply...');
-            updateMicVisibility();
+            updateInputButtons();
             clearTimeout(thinkingTimer);
             const effectiveTimeout = timeoutMs ?? ((config.promptTimeoutSeconds || 60) * 1000);
             thinkingTimer = setTimeout(removeThinking, Math.max(0, effectiveTimeout));
@@ -333,7 +335,7 @@
             ui.input.disabled = false;
             ui.btn.disabled = false;
             setPlaceholder(config.userTypePlaceholder || i18n.chat_message_ph || '');
-            updateMicVisibility();
+            updateInputButtons();
             ui.input.focus();
         };
         config.userTypePlaceholder = i18n.chat_message_ph || ui.input.placeholder;
@@ -353,7 +355,7 @@
             if (this.value === '') this.style.height = 'auto';
             const hasText = this.value.trim().length > 0;
             toggleUtilityButtons(hasText);
-            updateMicVisibility();
+            updateInputButtons();
         });
 
         ui.input.addEventListener('keydown', function (e) {
@@ -400,7 +402,7 @@
                 ui.fileBtn.disabled = false;
                 toggleUtilityButtons(hasText);
             }
-            updateMicVisibility();
+            updateInputButtons();
             ui.input.style.height = 'auto';
         };
 
@@ -831,7 +833,7 @@
             }
         }
 
-        updateMicVisibility();
+        updateInputButtons();
         sync();
         syncUpdates();
 

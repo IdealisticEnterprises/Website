@@ -1,5 +1,21 @@
 User-agent: *
 Allow: /
+Disallow: /account/
+Disallow: /async/
+Disallow: /contents/
+Disallow: /email/
+Disallow: /github/reader/
+Disallow: /io/
+Disallow: /paypal/
+Disallow: /spartan/
+Disallow: /webhooks/
+Disallow: /*?in=structure
+Disallow: /*?id=
+Disallow: /*?default_message=
+Disallow: /*?default_url=
+Disallow: /*?signed_in=
+Disallow: /*?signed_out=
+Disallow: /*?deleted=
 
 User-agent: facebookexternalhit/1.1
 Allow: /

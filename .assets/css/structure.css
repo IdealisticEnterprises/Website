@@ -32,8 +32,8 @@ body {
     background-attachment: fixed;
     color: var(--ink);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 17px;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -82,7 +82,8 @@ h1 {
 .lead {
     max-width: 640px;
     margin-top: 14px;
-    font-size: 1.05rem;
+    font-size: clamp(1.05rem, 2vw, 1.3rem);
+    line-height: 1.6;
 }
 
 .island {
@@ -261,13 +262,13 @@ h1 {
 
 .button {
     display: inline-block;
-    padding: 11px 22px;
-    border: 1px solid var(--line);
-    background: var(--glass-strong);
+    padding: 13px 26px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--glass);
     color: var(--ink);
     font: inherit;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     text-decoration: none;
     cursor: pointer;
 }
@@ -282,8 +283,8 @@ h1 {
 }
 
 .button.small {
-    padding: 7px 14px;
-    font-size: 0.85rem;
+    padding: 9px 20px;
+    font-size: 0.9rem;
 }
 
 .demo-line {

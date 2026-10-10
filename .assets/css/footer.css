@@ -39,7 +39,7 @@
     align-items: center;
     gap: 10px;
     color: #f5f7fb;
-    font-size: 1.15rem;
+    font-size: 1.15em;
     font-weight: 700;
     letter-spacing: -0.02em;
 }
@@ -52,13 +52,13 @@
 
 .footer-grid p {
     margin-top: 14px;
-    font-size: 0.95rem;
+    font-size: 0.95em;
 }
 
 .footer-grid h4 {
     margin: 0 0 16px 0;
     color: #f5f7fb;
-    font-size: 0.75rem;
+    font-size: 0.75em;
     font-weight: 700;
     letter-spacing: 0.16em;
     line-height: 1.05;
@@ -69,7 +69,7 @@
     display: block;
     margin-bottom: 10px;
     color: #9aa4b5;
-    font-size: 0.95rem;
+    font-size: 0.95em;
     transition: color 0.25s ease;
 }
 
@@ -79,6 +79,7 @@
 
 .footer-grid p a {
     display: inline;
+    font-size: inherit;
 }
 
 .footer-grid small {
@@ -89,7 +90,7 @@
     margin-top: 56px;
     padding-top: 24px;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    font-size: 0.82rem;
+    font-size: 0.82em;
 }
 
 .footer .copyright + .copyright {

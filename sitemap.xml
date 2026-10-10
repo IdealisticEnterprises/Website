@@ -2,27 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
         <loc>https://www.idealistic.ai/</loc>
-        <lastmod>2026-10-08</lastmod>
+        <lastmod>2026-10-10</lastmod>
         <priority>1.00</priority>
     </url>
     <url>
-        <loc>https://www.idealistic.ai/?in=webchat</loc>
-        <lastmod>2026-10-08</lastmod>
+        <loc>https://www.idealistic.ai/?in=chat</loc>
+        <lastmod>2026-10-10</lastmod>
         <priority>0.70</priority>
     </url>
     <url>
         <loc>https://www.idealistic.ai/terms/terms_of_use/</loc>
-        <lastmod>2026-05-02</lastmod>
+        <lastmod>2026-10-09</lastmod>
         <priority>0.50</priority>
     </url>
     <url>
         <loc>https://www.idealistic.ai/policies/privacy_policy/</loc>
-        <lastmod>2026-05-02</lastmod>
+        <lastmod>2026-10-09</lastmod>
         <priority>0.50</priority>
     </url>
     <url>
         <loc>https://www.idealistic.ai/instructions/user_data_deletion/</loc>
-        <lastmod>2026-05-02</lastmod>
+        <lastmod>2026-10-09</lastmod>
         <priority>0.40</priority>
     </url>
 </urlset>
