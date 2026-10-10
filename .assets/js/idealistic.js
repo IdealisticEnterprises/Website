@@ -3,9 +3,9 @@
 
     const config = window.IO_CONFIG || {};
     const i18n = window.IO_I18N || {};
-    config.lastId = -1;
+    config.lastId = parseInt(config.lastId, 10) || 0;
+    config.state = config.state || '';
     config.pollingState = false;
-    config.pollingUpdatesState = false;
 
     const escapeHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -38,8 +38,8 @@
 
         const state = {
             selectedFiles: [], voiceBlob: null, isRecording: false, mediaRecorder: null,
-            audioChunks: [], isFirstLoad: true, isThinking: false, autoMessageSent: false,
-            isInitialHistoryLoad: true, pendingBubble: null, timedOutMessageDate: null, pendingUserDate: null
+            audioChunks: [], isThinking: false, autoMessageSent: false,
+            pendingBubble: null, timedOutMessageDate: null, pendingUserDate: null
         };
 
         const errorToast = window.bootstrap ? new bootstrap.Toast(ui.toastEl, {delay: 4000}) : null;
@@ -52,7 +52,6 @@
         }
 
         let pollTimer = null;
-        let updateTimer = null;
         let thinkingTimer = null;
 
         const showError = (msg) => {
@@ -343,7 +342,6 @@
 
         function smoothScrollToBottom(force) {
             setTimeout(() => {
-                if (state.isInitialHistoryLoad && !force) return;
                 const isAtBottom = ui.box.scrollHeight - ui.box.scrollTop - ui.box.clientHeight <= 150;
                 if (force || isAtBottom) ui.box.scrollTo({top: ui.box.scrollHeight, behavior: 'smooth'});
             }, 10);
@@ -502,31 +500,85 @@
             return msg;
         };
 
-        const linkBubbleId = (bubbleEl, sender, id) => {
-            if (!bubbleEl || !id) return;
-            const targetId = bubbleId(sender, id);
-            const existing = document.getElementById(targetId);
-            if (existing && existing !== bubbleEl) existing.removeAttribute('id');
-            bubbleEl.id = targetId;
-        };
-
-        const patchBubbleText = (sender, msgData) => {
-            if (!msgData.id || !msgData.text) return;
-            const bubble = document.getElementById(bubbleId(sender, msgData.id));
-            if (!bubble) return;
-            let textNode = Array.from(bubble.children).find(el => !el.classList.contains('attachment-box'));
-            if (!textNode) {
-                textNode = document.createElement('div');
-                bubble.insertBefore(textNode, bubble.firstChild);
-            }
-            const newHtml = parseText(msgData.text);
-            if (textNode.innerHTML !== newHtml) textNode.innerHTML = newHtml;
-        };
-
         const request = async (url, fd) => {
-            const res = await fetch(url, {method: 'POST', body: fd, credentials: 'include'});
+            const res = await fetch(url, {
+                method: 'POST',
+                body: fd,
+                credentials: 'same-origin',
+                headers: {'X-Requested-With': config.pollHeader}
+            });
             if (!res.ok) throw new Error("HTTP " + res.status);
             return res.json();
+        };
+
+        const textNodeOf = (bubble) => Array.from(bubble.children).find(el => !el.classList.contains('attachment-box'));
+
+        const patchText = (bubble, source) => {
+            const incoming = textNodeOf(source);
+            if (!incoming) return;
+            let node = textNodeOf(bubble);
+            if (!node) {
+                node = document.createElement('div');
+                bubble.insertBefore(node, bubble.firstChild);
+            }
+            if (node.innerHTML !== incoming.innerHTML) node.innerHTML = incoming.innerHTML;
+        };
+
+        const applyFragment = (root) => {
+            let addedMessages = false;
+            let gotAssistant = false;
+
+            Array.from(root.children).forEach(wrapper => {
+                const incoming = wrapper.firstElementChild;
+                if (!incoming) return;
+                const isUser = incoming.classList.contains('msg-user');
+                const existing = incoming.id ? document.getElementById(incoming.id) : null;
+
+                if (existing) {
+                    patchText(existing, incoming);
+                    return;
+                }
+                addedMessages = true;
+
+                if (isUser && state.pendingBubble) {
+                    const bubble = state.pendingBubble;
+                    state.pendingBubble = null;
+                    bubble.id = incoming.id;
+                    patchText(bubble, incoming);
+                    return;
+                }
+                const node = document.importNode(wrapper, true);
+                const thinking = document.querySelector('.thinking-wrapper');
+                if (thinking) ui.box.insertBefore(node, thinking); else ui.box.appendChild(node);
+                if (!isUser) gotAssistant = true;
+            });
+            if (addedMessages) smoothScrollToBottom(false);
+            return gotAssistant;
+        };
+
+        const evaluatePending = (gotAssistant, pendingDate) => {
+            if (gotAssistant) {
+                state.pendingUserDate = null;
+                state.timedOutMessageDate = null;
+                removeThinking();
+            } else if (pendingDate) {
+                state.pendingUserDate = pendingDate;
+            }
+
+            if (state.pendingUserDate) {
+                const timeoutMs = (config.promptTimeoutSeconds || 60) * 1000;
+                const elapsedMs = msSinceServerDate(state.pendingUserDate);
+
+                if (elapsedMs >= timeoutMs) {
+                    if (state.isThinking) removeThinking();
+                    if (state.timedOutMessageDate !== state.pendingUserDate) {
+                        state.timedOutMessageDate = state.pendingUserDate;
+                        showError(i18n.chat_network_failed || 'The network request failed.');
+                    }
+                } else if (!state.isThinking) {
+                    showThinking(false, timeoutMs - elapsedMs);
+                }
+            }
         };
 
         const sync = async () => {
@@ -534,202 +586,48 @@
             config.pollingState = true;
             clearTimeout(pollTimer);
             try {
-                const params = new URLSearchParams({
-                    session_id: config.sessionId,
-                    random_id: config.randomId,
-                    after_id: config.lastId
+                const body = new URLSearchParams();
+                body.append(config.pollField, '1');
+                if (config.sessionId) body.append('session_id', config.sessionId);
+                body.append('after_id', config.lastId > 15 ? config.lastId - 15 : -1);
+                body.append('state', config.state || '');
+                const response = await fetch(config.pollUrl, {
+                    method: 'POST',
+                    body: body,
+                    credentials: 'same-origin',
+                    headers: {'X-Requested-With': config.pollHeader}
                 });
-                if (!config.isDemo) {
-                    if (config.defaultMessage) params.append('default_message', config.defaultMessage);
-                    if (config.defaultUrl) params.append('default_url', config.defaultUrl);
-                }
-                const fetchReq = await fetch(config.getUrl + '?' + params.toString(), {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                if (!fetchReq.ok) throw new Error("HTTP " + fetchReq.status);
-                const res = await fetchReq.json();
+                let gotAssistant = false;
+                let pendingDate = null;
 
-                if (res.success === false) {
-                    if (res.message && res.message.length > 0) showError(res.message);
-                    return;
-                }
+                if (response.status !== 204) {
+                    if (!response.ok) throw new Error("HTTP " + response.status);
 
-                // The account's language was changed elsewhere (e.g. the AI chat
-                // itself, or another open tab) - pick it up here without waiting
-                // for the visitor to do anything on this page.
-                if (res.language && res.language !== config.language) {
-                    window.location.reload();
-                    return;
-                }
+                    if ((response.headers.get('Content-Type') || '').indexOf('application/json') !== -1) {
+                        const res = await response.json();
+                        if (res.success === false && res.message && res.message.length > 0) showError(res.message);
+                        return;
+                    }
+                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const root = doc.getElementById(config.fragmentId);
+                    if (!root) return;
+                    const language = root.dataset.language;
 
-                let fetchedNewMessages = false;
-
-                if (res.data && res.data.history) {
-                    const incomingId = parseInt(res.data.last_id, 10);
+                    if (language && language !== config.language) {
+                        window.location.reload();
+                        return;
+                    }
+                    const incomingId = parseInt(root.dataset.lastId, 10);
                     if (incomingId > config.lastId) config.lastId = incomingId;
-                    const history = res.data.history;
-                    let gotAssistant = false;
-                    let lastWasUser = false;
-                    let lastUserDate = null;
-                    for (const time in history) {
-                        if (history[time].user) {
-                            history[time].user.forEach(m => {
-                                lastUserDate = m.date || time;
-                                const existingUserBubble = m.id ? document.getElementById(bubbleId('user', m.id)) : null;
-                                if (existingUserBubble) {
-                                    if (m.text) {
-                                        let textNode = Array.from(existingUserBubble.children).find(el => !el.classList.contains('attachment-box'));
-                                        if (!textNode) {
-                                            textNode = document.createElement('div');
-                                            existingUserBubble.insertBefore(textNode, existingUserBubble.firstChild);
-                                        }
-                                        const newHtml = parseText(m.text);
-                                        if (textNode.innerHTML !== newHtml) textNode.innerHTML = newHtml;
-                                    }
-                                } else if (state.pendingBubble) {
-                                    const bubbleEl = state.pendingBubble;
-                                    state.pendingBubble = null;
-                                    linkBubbleId(bubbleEl, 'user', m.id);
-                                    if (m.text) {
-                                        let textNode = Array.from(bubbleEl.children).find(el => !el.classList.contains('attachment-box'));
-                                        if (!textNode) {
-                                            textNode = document.createElement('div');
-                                            bubbleEl.insertBefore(textNode, bubbleEl.firstChild);
-                                        }
-                                        textNode.innerHTML = parseText(m.text);
-                                    }
-                                } else {
-                                    appendMsg(m, 'user');
-                                }
-                                fetchedNewMessages = true;
-                            });
-                            lastWasUser = true;
-                        }
-                        if (history[time].assistant) {
-                            history[time].assistant.forEach(m => {
-                                const existingAssistantBubble = m.id ? document.getElementById(bubbleId('assistant', m.id)) : null;
-                                if (existingAssistantBubble) {
-                                    if (m.text) {
-                                        let textNode = Array.from(existingAssistantBubble.children).find(el => !el.classList.contains('attachment-box'));
-                                        if (!textNode) {
-                                            textNode = document.createElement('div');
-                                            existingAssistantBubble.insertBefore(textNode, existingAssistantBubble.firstChild);
-                                        }
-                                        const newHtml = parseText(m.text);
-                                        if (textNode.innerHTML !== newHtml) textNode.innerHTML = newHtml;
-                                    }
-                                } else {
-                                    appendMsg(m, 'assistant');
-                                }
-                                fetchedNewMessages = true;
-                            });
-                            gotAssistant = true;
-                            lastWasUser = false;
-                        }
-                    }
-                    state.isInitialHistoryLoad = false;
-                    if (gotAssistant) {
-                        state.pendingUserDate = null;
-                        state.timedOutMessageDate = null;
-                        removeThinking();
-                    } else if (lastWasUser) {
-                        state.pendingUserDate = lastUserDate;
-                    }
+                    config.state = root.dataset.state || '';
+                    pendingDate = root.dataset.pendingDate || null;
+                    gotAssistant = applyFragment(root);
                 }
-
-                if (state.pendingUserDate) {
-                    const timeoutMs = (config.promptTimeoutSeconds || 60) * 1000;
-                    const elapsedMs = msSinceServerDate(state.pendingUserDate);
-
-                    if (elapsedMs >= timeoutMs) {
-                        if (state.isThinking) removeThinking();
-                        if (state.timedOutMessageDate !== state.pendingUserDate) {
-                            state.timedOutMessageDate = state.pendingUserDate;
-                            showError(i18n.chat_network_failed || 'The network request failed.');
-                        }
-                    } else if (!state.isThinking) {
-                        showThinking(false, timeoutMs - elapsedMs);
-                    }
-                }
-
-                if (!fetchedNewMessages && config.lastId > 0) {
-                    const updateAfterId = Math.max(0, config.lastId - 15);
-                    const updateParams = new URLSearchParams({
-                        session_id: config.sessionId,
-                        random_id: config.randomId,
-                        after_id: updateAfterId
-                    });
-                    if (!config.isDemo) {
-                        if (config.defaultMessage) updateParams.append('default_message', config.defaultMessage);
-                        if (config.defaultUrl) updateParams.append('default_url', config.defaultUrl);
-                    }
-                    const updateReq = await fetch(config.getUrl + '?' + updateParams.toString(), {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-                    if (updateReq.ok) {
-                        const updateRes = await updateReq.json();
-                        if (updateRes.success !== false && updateRes.data && updateRes.data.history) {
-                            const history = updateRes.data.history;
-                            for (const time in history) {
-                                ['user', 'assistant'].forEach(sender => {
-                                    if (history[time][sender]) history[time][sender].forEach(msgData => patchBubbleText(sender, msgData));
-                                });
-                            }
-                        }
-                    }
-                }
+                evaluatePending(gotAssistant, pendingDate);
             } catch (e) {
             } finally {
                 config.pollingState = false;
-                const delay = (state.isFirstLoad || state.isThinking) ? 1200 : 4000;
-                if (state.isFirstLoad) {
-                    const loader = document.getElementById('loading-screen');
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 500);
-                    }
-                    state.isFirstLoad = false;
-                }
-                pollTimer = setTimeout(sync, delay);
-            }
-        };
-
-        const syncUpdates = async () => {
-            if (config.pollingUpdatesState) return;
-            config.pollingUpdatesState = true;
-            clearTimeout(updateTimer);
-            try {
-                const updateAfterId = config.lastId > 15 ? config.lastId - 15 : 0;
-                const params = new URLSearchParams({
-                    session_id: config.sessionId,
-                    random_id: config.randomId,
-                    after_id: updateAfterId
-                });
-                if (!config.isDemo) {
-                    if (config.defaultMessage) params.append('default_message', config.defaultMessage);
-                    if (config.defaultUrl) params.append('default_url', config.defaultUrl);
-                }
-                const fetchReq = await fetch(config.getUrl + '?' + params.toString(), {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                if (fetchReq.ok) {
-                    const res = await fetchReq.json();
-                    if (res.success !== false && res.data && res.data.history) {
-                        const history = res.data.history;
-                        for (const time in history) {
-                            ['user', 'assistant'].forEach(sender => {
-                                if (history[time][sender]) history[time][sender].forEach(msgData => patchBubbleText(sender, msgData));
-                            });
-                        }
-                    }
-                }
-            } catch (e) {
-            } finally {
-                config.pollingUpdatesState = false;
-                updateTimer = setTimeout(syncUpdates, state.isThinking ? 1000 : 8000);
+                pollTimer = setTimeout(sync, state.isThinking ? 1200 : 4000);
             }
         };
 
@@ -760,7 +658,7 @@
             ui.btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
 
             const fd = new FormData();
-            fd.append('session_id', config.sessionId);
+            if (config.sessionId) fd.append('session_id', config.sessionId);
             fd.append('random_id', config.randomId);
             fd.append('language', config.language);
             if (!config.isDemo && config.defaultUrl) fd.append('default_url', config.defaultUrl);
@@ -778,7 +676,6 @@
             renderUIState();
             showThinking(true);
             sync();
-            syncUpdates();
 
             try {
                 const res = await request(config.addUrl, fd);
@@ -834,8 +731,19 @@
         }
 
         updateInputButtons();
-        sync();
-        syncUpdates();
+
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
+        }
+
+        if (config.pendingDate) {
+            evaluatePending(false, config.pendingDate);
+        } else if (config.lastId > 0) {
+            ui.input.focus();
+        }
+        pollTimer = setTimeout(sync, state.isThinking ? 1200 : 4000);
 
         if (window.IO_ACTION_TOAST && ui.toastEl && ui.toastMsg) {
             ui.toastEl.className = 'toast align-items-center border-0 text-bg-' + (window.IO_ACTION_TOAST.success ? 'success' : 'danger');
