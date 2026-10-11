@@ -130,9 +130,17 @@
     } catch (error) {
       wanted = '';
     }
+    let found = false;
     plans.forEach(function (plan) {
-      plan.classList.toggle('is-highlighted', plan.id === wanted);
+      const active = plan.id === wanted;
+      plan.classList.toggle('is-highlighted', active);
+      found = found || active;
     });
+    const container = document.querySelector('.plans');
+
+    if (container) {
+      container.classList.toggle('has-highlight', found);
+    }
   }
 
   if (plans.length) {
