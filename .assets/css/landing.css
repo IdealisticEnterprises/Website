@@ -867,6 +867,23 @@ html:not(.js) .tabpanel + .tabpanel {
     letter-spacing: 0;
 }
 
+.plan-rate {
+    margin: -8px 0 18px 0;
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.plan-saving {
+    margin: 0 0 20px 0;
+    padding: 10px 12px;
+    border: 1px solid var(--blue);
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
 .plan-custom {
     font-size: clamp(2.2rem, 3.4vw, 2.8rem);
 }
@@ -901,6 +918,12 @@ html:not(.js) .tabpanel + .tabpanel {
     width: 100%;
     overflow-wrap: anywhere;
     text-align: center;
+}
+
+.plan.enterprise .button {
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 0.86rem;
 }
 
 .plan.enterprise {

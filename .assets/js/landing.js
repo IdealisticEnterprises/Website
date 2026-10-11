@@ -33,6 +33,16 @@
     });
   }
 
+  document.querySelectorAll('[data-paddle-price]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      if (!window.Paddle || !window.Paddle.Checkout) {
+        window.location.href = button.getAttribute('data-fallback');
+        return;
+      }
+      window.Paddle.Checkout.open({items: [{priceId: button.getAttribute('data-paddle-price'), quantity: 1}]});
+    });
+  });
+
   const revealItems = document.querySelectorAll('.reveal');
 
   if ('IntersectionObserver' in window) {
