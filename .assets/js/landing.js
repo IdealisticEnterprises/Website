@@ -117,7 +117,28 @@
     event.preventDefault();
     smoothScrollTo(Math.max(0, target.getBoundingClientRect().top + window.scrollY - 88));
     history.pushState(null, '', url.hash);
+    highlightPlan();
   });
+
+  const plans = Array.from(document.querySelectorAll('.plan[id]'));
+
+  function highlightPlan() {
+    let wanted = '';
+
+    try {
+      wanted = decodeURIComponent(window.location.hash.slice(1)).toLowerCase();
+    } catch (error) {
+      wanted = '';
+    }
+    plans.forEach(function (plan) {
+      plan.classList.toggle('is-highlighted', plan.id === wanted);
+    });
+  }
+
+  if (plans.length) {
+    window.addEventListener('hashchange', highlightPlan);
+    highlightPlan();
+  }
 
   document.querySelectorAll('[data-tabs]').forEach(function (root) {
     const tabs = Array.from(root.querySelectorAll('[role="tab"]'));

@@ -38,7 +38,7 @@
 
         const state = {
             selectedFiles: [], voiceBlob: null, isRecording: false, mediaRecorder: null,
-            audioChunks: [], isThinking: false, autoMessageSent: false,
+            audioChunks: [], isThinking: false,
             pendingBubble: null, timedOutMessageDate: null, pendingUserDate: null
         };
 
@@ -695,40 +695,6 @@
                 ui.btn.innerHTML = originalBtnHtml;
             }
         });
-
-        if (config.isDemo && config.autoMessage) {
-            const maybeSendAutoMessage = () => {
-                if (state.autoMessageSent) return;
-                if (ui.box.querySelector('.msg-bubble')) {
-                    state.autoMessageSent = true;
-                    return;
-                }
-                if (ui.input.disabled || ui.btn.disabled || ui.input.value.trim().length > 0) return;
-
-                state.autoMessageSent = true;
-                ui.input.value = config.autoMessage;
-                if (ui.form.requestSubmit) {
-                    ui.form.requestSubmit();
-                } else {
-                    ui.form.dispatchEvent(new Event('submit', {cancelable: true}));
-                }
-            };
-
-            const revealEls = document.querySelectorAll('.reveal-on-scroll');
-            const bottomSentinel = revealEls.length > 0 ? revealEls[revealEls.length - 1] : null;
-
-            if (bottomSentinel) {
-                const autoMsgObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            autoMsgObserver.disconnect();
-                            maybeSendAutoMessage();
-                        }
-                    });
-                }, {threshold: 0.1, root: ui.box});
-                autoMsgObserver.observe(bottomSentinel);
-            }
-        }
 
         updateInputButtons();
 

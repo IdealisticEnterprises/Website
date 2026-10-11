@@ -1180,3 +1180,24 @@ html:not(.js) .tabpanel + .tabpanel {
         border-top: 0;
     }
 }
+
+.hero.compact {
+    min-height: 0;
+    padding: 150px 0 40px 0;
+}
+
+.grid.halves {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 820px) {
+    .grid.halves {
+        grid-template-columns: 1fr;
+    }
+}
+
+.plan.is-highlighted {
+    border-color: var(--blue-soft);
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.22) 0%, var(--glass) 70%);
+    box-shadow: 0 0 0 1px var(--blue-soft), 0 0 48px rgba(59, 130, 246, 0.35);
+}
