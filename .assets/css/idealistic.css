@@ -124,6 +124,14 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.msg-segment + .msg-segment { margin-top: 10px; }
+
+.msg-segment.msg-confirmed {
+    padding: 8px 12px;
+    border-left: 3px solid var(--primary-blue);
+    background: rgba(59, 130, 246, 0.16);
+}
+
 .chat-input {
     background-color: transparent !important;
     border: none !important;
