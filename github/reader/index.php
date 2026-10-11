@@ -33,7 +33,7 @@ if ($file === false) {
 
         if (element.length > 0) {
             document.body.innerHTML = element[0].innerHTML;
-            document.title = "Idealistic AI";
+            document.title = "IDEALISTIC™";
             document.querySelector('meta[name="description"]').setAttribute("content", "Science, technology & engineering.");
 
             for (let i = 0; i < document.scripts.length; i++) {
