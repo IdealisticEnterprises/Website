@@ -9,7 +9,6 @@ Disallow: /io/
 Disallow: /paypal/
 Disallow: /spartan/
 Disallow: /webhooks/
-Disallow: /structure
 Disallow: /*?id=
 Disallow: /*?default_message=
 Disallow: /*?default_url=
