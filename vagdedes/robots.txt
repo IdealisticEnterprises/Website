@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /async/
+Disallow: /contents/
+Disallow: /email/
+Disallow: /finance/
+Disallow: /minecraft/cloud/
+Disallow: /paypal/
+Disallow: /spartan/
+Disallow: /spigotmc/premium/
+
+Sitemap: https://www.vagdedes.com/sitemap.xml
