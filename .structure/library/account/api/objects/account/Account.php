@@ -1,0 +1,401 @@
+<?php
+
+class Account implements JsonSerializable, PhpAsyncSerializable
+{
+
+    // Application IDs required in: accounts, accepted-accounts, products, roles, moderations
+    public const
+        EMPTY_PASSWORD = "",
+        SYSTEM_ACCOUNT_ID = 3544,
+
+        IGNORE_APPLICATION_ID = -1,
+        DEFAULT_APPLICATION_ID = null,
+        IDEALISTIC_OFFICE_APPLICATION_ID = 0;
+
+    private object $object;
+    private bool $exists;
+    private ?array $transformData;
+    private AccountSettings $settings;
+    private AccountActions $actions;
+    private AccountHistory $history;
+    private AccountTransactions $transactions;
+    private AccountCooldowns $cooldowns;
+    private AccountAccounts $accounts;
+    private AccountPermissions $permissions;
+    private AccountModerations $moderations;
+    private AccountPassword $password;
+    private AccountEmail $email;
+    private AccountIdentification $identification;
+    private AccountPhoneNumber $phoneNumber;
+    private AccountPatreon $patreon;
+    private AccountFunctionality $functionality;
+    private AccountRegistry $registry;
+    private AccountSession $session;
+    private TwoFactorAuthentication $twoFactorAuthentication;
+    private AccountInstructions $instructions;
+    private AccountTeam $team;
+    private AccountTranslation $translation;
+    private AccountEmbeddings $embeddings;
+    private ?MethodReply $creationAttempt;
+
+    public function __construct(?int    $applicationID = null,
+                                ?int    $id = null,
+                                ?string $email = null,
+                                ?string $username = null,
+                                ?string $identification = null,
+                                bool    $checkDeletion = true,
+                                ?string $attemptCreation = null)
+    {
+        // Transform
+        $this->def($applicationID);
+
+        if ($id !== null) {
+            $this->object->id = $id;
+        } else if ($email !== null) {
+            $this->object->email_address = $email;
+        }
+        $this->transformData = array(
+            "id" => $id,
+            "email" => $email,
+            "username" => $username,
+            "identification" => $identification,
+            "check_deletion" => $checkDeletion,
+            "attempt_creation" => $attemptCreation
+        );
+
+        // Dependent
+        $this->settings = new AccountSettings($this);
+        $this->history = new AccountHistory($this);
+        $this->transactions = new AccountTransactions($this);
+        $this->cooldowns = new AccountCooldowns($this);
+        $this->accounts = new AccountAccounts($this);
+        $this->permissions = new AccountPermissions($this);
+        $this->phoneNumber = new AccountPhoneNumber($this);
+        $this->patreon = new AccountPatreon($this);
+        $this->team = new AccountTeam($this);
+
+        // Partial
+        $this->email = new AccountEmail($this);
+        $this->actions = new AccountActions($this);
+        $this->password = new AccountPassword($this);
+        $this->moderations = new AccountModerations($this);
+        $this->functionality = new AccountFunctionality($this);
+        $this->instructions = new AccountInstructions($this);
+
+        // Independent
+        $this->registry = new AccountRegistry($this);
+        $this->session = new AccountSession($this);
+        $this->twoFactorAuthentication = new TwoFactorAuthentication($this);
+        $this->translation = new AccountTranslation($this);
+        $this->embeddings = new AccountEmbeddings($this);
+    }
+
+    private function transformFirstTime(): void
+    {
+        if ($this->transformData !== null) {
+            $this->transformLocal(
+                $this->getDetail("application_id", null, false),
+                $this->transformData["id"],
+                $this->transformData["email"],
+                $this->transformData["username"],
+                $this->transformData["identification"],
+                $this->transformData["check_deletion"],
+                $this->transformData["attempt_creation"]
+            );
+        }
+    }
+
+    private function transformLocal(?int    $applicationID = null,
+                                    ?int    $id = null,
+                                    ?string $email = null,
+                                    ?string $username = null,
+                                    ?string $identification = null,
+                                    bool    $checkDeletion = true,
+                                    ?string $attemptCreation = null): void
+    {
+        $this->transformData = null;
+        $hasID = $id !== null;
+        $hasUsername = $username !== null;
+        $hasIdentification = $identification !== null;
+        $hasEmail = is_email($email);
+
+        if (!$hasIdentification
+            && ($hasID ? $id <= 0 : !$hasUsername && !$hasEmail)) {
+            $this->def($applicationID);
+        } else {
+            if ($hasIdentification) {
+                $query = get_sql_query(
+                    AccountVariables::ACCOUNT_IDENTIFICATION_TABLE,
+                    array("account_id"),
+                    array(
+                        array("code", $identification)
+                    ),
+                    null,
+                    1
+                );
+
+                if (empty($query)) {
+                    $runQuery = false;
+                } else {
+                    $id = $query[0]->account_id;
+                    $hasID = true;
+                    $runQuery = true;
+                }
+            } else {
+                $runQuery = true;
+
+                if ($attemptCreation !== null) {
+                    $this->def($applicationID);
+                    $this->creationAttempt = $this->getRegistry()->create(
+                        $email,
+                        $attemptCreation === self::EMPTY_PASSWORD ? null : $attemptCreation,
+                        $hasUsername ? $username : null
+                    );
+                }
+            }
+            if ($runQuery) {
+                $query = get_sql_query(
+                    AccountVariables::ACCOUNTS_TABLE,
+                    null,
+                    array(
+                        $hasID ? array("id", $id) : "",
+                        $hasEmail ? array("email_address", strtolower($email)) : "",
+                        $hasUsername ? array("name", $username) : "",
+                        $checkDeletion ? array("deletion_date", null) : "",
+                        $applicationID !== self::IGNORE_APPLICATION_ID ? array("application_id", $applicationID) : ""
+                    ),
+                    null,
+                    1
+                );
+            } else {
+                $query = null;
+            }
+
+            if (!empty($query)) {
+                $this->identification = new AccountIdentification($this);
+
+                if ($hasIdentification && $this->identification->get() != $identification) { // Expired
+                    $this->def($applicationID);
+                } else {
+                    $this->exists = true;
+                    $this->object = $query[0];
+                }
+            } else {
+                $this->def($applicationID);
+            }
+        }
+    }
+
+    public function transform(
+        ?int    $id = null,
+        ?string $email = null,
+        ?string $username = null,
+        ?string $identification = null,
+        bool    $checkDeletion = true,
+        ?string $attemptCreation = null
+    ): self
+    {
+        $this->transformLocal(
+            $this->getDetail("application_id"),
+            $id,
+            $email,
+            $username,
+            $identification,
+            $checkDeletion,
+            $attemptCreation
+        );
+        return $this;
+    }
+
+    private function def(?int $applicationID): void
+    {
+        $this->exists = false;
+        $this->object = new stdClass();
+        $this->object->application_id = $applicationID;
+        $this->creationAttempt = null;
+    }
+
+    public function getNew(?int    $id = null,
+                           ?string $email = null,
+                           ?string $username = null,
+                           ?string $identification = null,
+                           bool    $checkDeletion = true): self
+    {
+        return new self(
+            $this->getDetail("application_id"),
+            $id,
+            $email,
+            $username,
+            $identification,
+            $checkDeletion,
+        );
+    }
+
+    public function exists(): bool
+    {
+        $this->transformFirstTime();
+        return $this->exists;
+    }
+
+    public function getCreationAttempt(): MethodReply
+    {
+        return $this->creationAttempt ?? new MethodReply(false, "No creation attempt was made.");
+    }
+
+    public function getDetail(string $detail, string $def = null, bool $recursive = true): mixed
+    {
+        if (isset($this->object->{$detail})) {
+            return $this->object->{$detail};
+        } else if ($recursive) {
+            $this->transformFirstTime();
+            return $this->getDetail($detail, $def, false);
+        } else {
+            return $this->object->{$detail} = $def;
+        }
+    }
+
+    public function setDetail(string $detail, mixed $value): MethodReply
+    {
+        if ($this->getDetail($detail) !== $value) {
+            if (!set_sql_query(
+                AccountVariables::ACCOUNTS_TABLE,
+                array($detail => $value),
+                array(
+                    array("id", $this->object->id)
+                ),
+                null,
+                1
+            )) {
+                return new MethodReply(false, "Failed to interact with the database.");
+            }
+            $this->object->{$detail} = $value;
+        }
+        return new MethodReply(true, "Account detail updated.");
+    }
+
+    public function getObject(): ?object
+    {
+        $this->transformFirstTime();
+        return $this->object;
+    }
+
+    // Separator
+
+    public function getSettings(): AccountSettings
+    {
+        return $this->settings;
+    }
+
+    public function getActions(): AccountActions
+    {
+        return $this->actions;
+    }
+
+    public function getHistory(): AccountHistory
+    {
+        return $this->history;
+    }
+
+    public function getTransactions(): AccountTransactions
+    {
+        return $this->transactions;
+    }
+
+    public function getCooldowns(): AccountCooldowns
+    {
+        return $this->cooldowns;
+    }
+
+    public function getAccounts(): AccountAccounts
+    {
+        return $this->accounts;
+    }
+
+    public function getPermissions(): AccountPermissions
+    {
+        return $this->permissions;
+    }
+
+    public function getModerations(): AccountModerations
+    {
+        return $this->moderations;
+    }
+
+    public function getPassword(): AccountPassword
+    {
+        return $this->password;
+    }
+
+    public function getEmail(): AccountEmail
+    {
+        return $this->email;
+    }
+
+    public function getTranslation(): AccountTranslation
+    {
+        return $this->translation;
+    }
+
+    public function getEmbeddings(): AccountEmbeddings
+    {
+        return $this->embeddings;
+    }
+
+    public function getIdentification(): AccountIdentification
+    {
+        return $this->identification;
+    }
+
+    public function getPhoneNumber(): AccountPhoneNumber
+    {
+        return $this->phoneNumber;
+    }
+
+    public function getPatreon(): AccountPatreon
+    {
+        return $this->patreon;
+    }
+
+    public function getFunctionality(): AccountFunctionality
+    {
+        return $this->functionality;
+    }
+
+    // Separator
+
+    public function getSession(): AccountSession
+    {
+        return $this->session;
+    }
+
+    public function getTwoFactorAuthentication(): TwoFactorAuthentication
+    {
+        return $this->twoFactorAuthentication;
+    }
+
+    public function getRegistry(): AccountRegistry
+    {
+        return $this->registry;
+    }
+
+    public function getTeam(): AccountTeam
+    {
+        return $this->team;
+    }
+
+    public function getInstructions(): AccountInstructions
+    {
+        return $this->instructions;
+    }
+
+    // Separator
+
+    public final function jsonSerialize(): array|object
+    {
+        $object = $this->getObject();
+        unset($object->password);
+        unset($object->deletion_date);
+        unset($object->deletion_reason);
+        return $object;
+    }
+}

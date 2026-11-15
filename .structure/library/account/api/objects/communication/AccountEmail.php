@@ -1,0 +1,357 @@
+<?php
+
+class AccountEmail implements PhpAsyncSerializable
+{
+    private Account $account;
+    private bool $run;
+    private ?string $suffix, $temporaryEmail;
+
+    public function __construct(Account $account)
+    {
+        $this->account = $account;
+        $this->run = true;
+        $this->suffix = null;
+        $this->temporaryEmail = null;
+    }
+
+    public function setToRun(bool $run): void
+    {
+        $this->run = $run;
+    }
+
+    public function setSuffix(?string $suffix): void
+    {
+        $this->suffix = $suffix;
+    }
+
+    public function setTemporaryEmailAddress(?string $email): bool
+    {
+        if ($email !== null
+            && !is_email($email)) {
+            return false;
+        }
+        $this->temporaryEmail = $email;
+
+        if ($email !== null) {
+            $query = get_sql_query(
+                AccountVariables::ACCOUNTS_TABLE,
+                array("id"),
+                array(
+                    array("temporary_email_address", $email)
+                ),
+                null,
+                100
+            );
+
+            if (!empty($query)) {
+                foreach ($query as $row) {
+                    $account = $this->account->getNew(
+                        $row->id,
+                        null,
+                        null,
+                        null,
+                        false
+                    );
+
+                    if ($account->exists()) {
+                        $account->setDetail("temporary_email_address", null);
+                    }
+                }
+            }
+        }
+        $this->account->setDetail("temporary_email_address", $email);
+        return true;
+    }
+
+    private function getEmailAddress(): ?string
+    {
+        return $this->temporaryEmail ?? $this->account->getDetail("email_address");
+    }
+
+    public function getTemporaryEmailAddress(): ?string
+    {
+        return $this->temporaryEmail ?? $this->account->getDetail("temporary_email_address");
+    }
+
+    public function requestVerification(
+        string          $email,
+        bool            $code = false,
+        int|string|null $cooldown = "1 minute"
+    ): MethodReply
+    {
+        if (!is_email($email)) {
+            return new MethodReply(false, "Please enter a valid email address.");
+        }
+        $email = strtolower($email);
+        $functionality = $this->account->getFunctionality();
+        $functionalityOutcome = $functionality->getResult(AccountFunctionality::CHANGE_EMAIL, true);
+
+        if (!$functionalityOutcome->isPositiveOutcome()) {
+            return new MethodReply(false, $functionalityOutcome->getMessage());
+        }
+        $currentEmail = $this->getEmailAddress();
+
+        if ($currentEmail !== null
+            && $email === strtolower($currentEmail)) {
+            return new MethodReply(false, "This is already your email address.");
+        }
+        if (!empty(get_sql_query(
+            AccountVariables::ACCOUNTS_TABLE,
+            array("id"),
+            array(
+                array("email_address", $email),
+                array("deletion_date", null),
+                array("application_id", $this->account->getDetail("application_id"))
+            ),
+            null,
+            1
+        ))) {
+            return new MethodReply(false, "This email address process is already in use by another user.");
+        }
+        if (!$this->account->getHistory()->add("request_email_verification", $currentEmail, $email)) {
+            return new MethodReply(false, "Failed to update user history.");
+        }
+        $result = $this->initiateVerification($email, $code);
+        $resultOutcome = $result->isPositiveOutcome();
+
+        if ($resultOutcome) {
+            if ($cooldown !== null) {
+                $functionality->addInstantCooldown(AccountFunctionality::CHANGE_EMAIL, $cooldown);
+            }
+        }
+        return new MethodReply($resultOutcome, $result->getMessage());
+    }
+
+    public function completeVerification(
+        ?string         $tokenOrCode = null,
+        bool            $code = false,
+        int|string|null $cooldown = "1 day"
+    ): MethodReply
+    {
+        $account = $this->account;
+        $exists = $account->exists();
+
+        if ($exists) {
+            $functionality = $account->getFunctionality();
+            $functionalityOutcome = $functionality->getResult(AccountFunctionality::CHANGE_EMAIL);
+
+            if (!$functionalityOutcome->isPositiveOutcome()) {
+                return new MethodReply(false, $functionalityOutcome->getMessage());
+            }
+        }
+        $date = get_current_date();
+        $array = get_sql_query(
+            AccountVariables::EMAIL_VERIFICATIONS_TABLE,
+            $exists ? array("id", "email_address") : array("id", "email_address", "account_id"),
+            array(
+                $tokenOrCode === null
+                    ? array("account_id", $account->getDetail("id"))
+                    : array($code ? "code" : "token", $tokenOrCode),
+                array("completion_date", null),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", $date),
+                null
+            ),
+            null,
+            1
+        );
+
+        if (empty($array)) {
+            return new MethodReply(false, "This email verification is invalid or has expired.");
+        }
+        $object = $array[0];
+        $applicationID = $account->getDetail("application_id");
+
+        if (!$exists) {
+            $account = $this->account->getNew($object->account_id);
+
+            if (!$account->exists()) {
+                return new MethodReply(false, "Failed to find account related to email.");
+            }
+            $functionality = $account->getFunctionality();
+            $functionalityOutcome = $functionality->getResult(AccountFunctionality::CHANGE_EMAIL);
+
+            if (!$functionalityOutcome->isPositiveOutcome()) {
+                return new MethodReply(false, $functionalityOutcome->getMessage());
+            }
+        }
+        $email = $object->email_address;
+        $oldEmail = $account->getEmail()->getEmailAddress();
+
+        if ($oldEmail != $email
+            && !empty(get_sql_query(
+                AccountVariables::ACCOUNTS_TABLE,
+                array("id"),
+                array(
+                    array("email_address", $email),
+                    array("deletion_date", null),
+                    array("application_id", $applicationID),
+                ),
+                null,
+                1
+            ))) {
+            return new MethodReply(false, "This email address is already in use by another user.");
+        }
+        $verifiedEmail = $account->getEmail()->isVerified();
+
+        if (!set_sql_query(
+            AccountVariables::EMAIL_VERIFICATIONS_TABLE,
+            array("completion_date" => $date),
+            array(
+                array("id", $object->id),
+            ),
+            null,
+            1
+        )) {
+            return new MethodReply(false, "Failed to interact with the database.");
+        }
+        $change = $account->setDetail("email_address", $email);
+
+        if (!$change->isPositiveOutcome()) {
+            return new MethodReply(false, $change->getMessage());
+        }
+        if (!$account->getHistory()->add("complete_email_verification", $oldEmail, $email)) {
+            return new MethodReply(false, "Failed to update user history.");
+        }
+        $account->getEmail()->send(
+            $verifiedEmail ? "emailChanged" : "emailVerified",
+            array(
+                "email" => $email,
+            ),
+            "account",
+            false
+        );
+        if ($cooldown !== null) {
+            $functionality->addInstantCooldown(AccountFunctionality::CHANGE_EMAIL, $cooldown);
+        }
+        return new MethodReply(true, "Your email verification has been successfully completed.");
+    }
+
+    public function initiateVerification(?string $email = null, bool $code = false): MethodReply
+    {
+        if ($email === null) {
+            if ($this->isVerified()) {
+                return new MethodReply(true, "Your email address is already verified.");
+            }
+            $email = $this->getEmailAddress();
+
+            if ($email === null) {
+                return new MethodReply(false, "You do not have an email address set.");
+            }
+        } else {
+            $parameter = new ParameterVerification($email, ParameterVerification::TYPE_EMAIL, 5, 384);
+
+            if (!$parameter->getOutcome()->isPositiveOutcome()) {
+                return new MethodReply(false, $parameter->getOutcome()->getMessage());
+            }
+            $email = strtolower($email);
+        }
+        $accountID = $this->account->getDetail("id");
+        $date = get_current_date();
+        $array = get_sql_query(
+            AccountVariables::EMAIL_VERIFICATIONS_TABLE,
+            array("token", "code"),
+            array(
+                array("account_id", $accountID),
+                array("completion_date", null),
+                array("email_address", $email),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", $date),
+                null
+            ),
+            null,
+            1
+        );
+
+        if (empty($array)) {
+            $token = random_string(512);
+            $createdCode = $code ? random_string(32) : null;
+
+            if (!sql_insert(
+                AccountVariables::EMAIL_VERIFICATIONS_TABLE,
+                array(
+                    "token" => $token,
+                    "code" => $createdCode,
+                    "account_id" => $accountID,
+                    "email_address" => $email,
+                    "creation_date" => $date,
+                    "expiration_date" => get_future_date("7 days")
+                ))) {
+                return new MethodReply(false, "Failed to interact with the database.");
+            }
+        } else {
+            $token = $array[0]->token;
+            $createdCode = $array[0]->code;
+        }
+        $array = array(
+            "token" => $token,
+        );
+
+        if (!empty($createdCode)) {
+            $array["code"] = $createdCode;
+        }
+        $this->send(
+            "verifyEmail",
+            $array,
+            "account",
+            false
+        );
+        return new MethodReply(true, "A verification email has been sent to your email.");
+    }
+
+    public function isVerified(): bool
+    {
+        $email = $this->getEmailAddress();
+
+        if ($email === null) {
+            return true;
+        } else {
+            return !empty(get_sql_query(
+                AccountVariables::EMAIL_VERIFICATIONS_TABLE,
+                array("id"),
+                array(
+                    array("account_id", $this->account->getDetail("id")),
+                    array("completion_date", "IS NOT", null),
+                    null,
+                    array("email_address", "IS", null, 0), // Support for old system structure
+                    array("email_address", $email),
+                    null,
+                ),
+                null,
+                1
+            ));
+        }
+    }
+
+    public function send(
+        string $case,
+        ?array $detailsArray = null,
+        string $type = "account",
+        bool   $unsubscribe = true
+    ): bool
+    {
+        $email = $this->getEmailAddress();
+
+        if ($email === null) {
+            return false;
+        } else {
+            $applicationID = $this->account->getDetail("application_id");
+            return !$this->run
+                || $this->account->getSettings()->isEnabled(
+                    "receive_" . $type . "_emails",
+                    $type === "account"
+                )
+                && send_email_by_plan(
+                    ($applicationID === null ? "" : $applicationID . "-")
+                    . $case
+                    . ($this->suffix !== null ? "-" . $this->suffix : ""),
+                    $email,
+                    $detailsArray,
+                    $unsubscribe
+                ) === 1;
+        }
+    }
+
+}
