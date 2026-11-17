@@ -9,7 +9,6 @@ function load_account_page(?callable $callable = null, ?string $forceDirectory =
 
     echo "<!DOCTYPE html>
         <html lang='en'><head>"
-        . get_google_analytics()
         . "<title>Idealistic AI | $title</title>"
         . "<script src='https://www.google.com/recaptcha/api.js'></script>"
         . "</head>
