@@ -1,0 +1,94 @@
+/* /club: the four plans in strict order (plus, pro, vip, red).
+   landing.js highlights the plan named in the URL (#plus, #pro, #vip, #red). */
+
+.plan-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 34px;
+}
+
+.plan-picker a {
+    padding: 9px 18px;
+    border: 1px solid var(--line);
+    background: var(--glass);
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease, transform 0.45s var(--ios-ease, ease);
+}
+
+.plan-picker a:hover {
+    color: var(--ink);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.plan-picker a:active {
+    transform: scale(0.96);
+}
+
+.plan-picker a[aria-current="true"] {
+    color: #fff;
+    border-color: var(--blue);
+    background: rgba(59, 130, 246, 0.18);
+}
+
+.plan-tier {
+    margin-bottom: 18px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+/* Smooth highlight: the chosen plan lifts and glows, the others fade back */
+.plans .plan {
+    transition:
+        opacity 0.55s var(--ios-ease, ease),
+        transform 0.6s var(--ios-ease, ease),
+        border-color 0.45s ease,
+        background 0.45s ease,
+        box-shadow 0.6s var(--ios-ease, ease);
+}
+
+.plans .plan.is-highlighted {
+    transform: translateY(-8px);
+}
+
+@media (max-width: 1020px) {
+    .grid.four.plans {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .grid.four.plans {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .plans .plan,
+    .plan-picker a {
+        transition-duration: 0.01s;
+    }
+
+    .plans .plan.is-highlighted {
+        transform: none;
+    }
+}
+
+/* The plan links lead straight into the two groups (one-time purchases, then subscriptions) */
+#plans {
+    padding-bottom: 0;
+}
+
+.plan-group {
+    padding-top: 64px;
+    padding-bottom: 40px;
+}
+
+.plan-group + .plan-group {
+    padding-top: 40px;
+}

@@ -1,0 +1,35 @@
+# idealistic.enterprises (static site on Hetzner, behind Cloudflare)
+
+DirectoryIndex index.html
+Options -Indexes
+
+# Custom error pages
+ErrorDocument 401 /401/index.html
+ErrorDocument 403 /403/index.html
+ErrorDocument 404 /404/index.html
+ErrorDocument 500 /500/index.html
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # www -> apex (HTTP -> HTTPS is already handled by Cloudflare)
+    RewriteCond %{HTTP_HOST} ^www\.idealistic\.enterprises$ [NC]
+    RewriteRule ^(.*)$ https://idealistic.enterprises/$1 [R=301,L]
+
+    # idealistic.chat/<app> -> doremi.chat/<app> -> here as /doremi/<app>: pass it on to the short link
+    # (/<app> on this domain is a Cloudflare redirect to the app itself). 302 so a later Cloudflare fix is not cached away.
+    RewriteRule ^doremi/(ios|ipados|android|whatsapp|telegram|messenger|instagram|discord|x|twitter|facebook|github)/?$ /$1 [NC,R=302,L]
+
+    # idealistic.download and idealistic.app (Cloudflare) arrive as /downloadable: that is the Apps page
+    RewriteRule ^downloadable/?$ /apps/ [R=301,L]
+
+    # Terms of Service and Terms of Use are the same terms
+    RewriteRule ^terms/terms_of_service/?$ /terms/terms_of_use/ [R=301,L]
+
+    # Hide dotfiles and dot-folders (.DS_Store, .git, ...), except .well-known
+    RewriteRule (^|/)\.(?!well-known(/|$)) - [R=404,L]
+
+    # Not part of the public site
+    RewriteRule ^README\.md$ - [R=404,L]
+    RewriteRule \.php$ - [R=404,L]
+</IfModule>

@@ -1,25 +1,8 @@
 User-agent: *
 Allow: /
-Disallow: /account/
-Disallow: /async/
-Disallow: /contents/
-Disallow: /email/
-Disallow: /github/reader/
-Disallow: /io/
-Disallow: /paypal/
-Disallow: /spartan/
-Disallow: /webhooks/
-Disallow: /*?id=
-Disallow: /*?default_message=
-Disallow: /*?default_url=
-Disallow: /*?signed_in=
-Disallow: /*?signed_out=
-Disallow: /*?deleted=
+Disallow: /401/
+Disallow: /403/
+Disallow: /404/
+Disallow: /500/
 
-User-agent: facebookexternalhit/1.1
-Allow: /
-
-User-agent: facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)
-Allow: /
-
-Sitemap: https://www.idealistic.ai/sitemap.xml
+Sitemap: https://idealistic.enterprises/sitemap.xml

@@ -1,4 +1,7 @@
 <?php
+
+use account\api\objects\account\Account;
+
 require '/var/www/.structure/library/base/form.php';
 require '/var/www/.structure/library/base/requirements/account_systems.php';
 $path = get_form_get("path");

@@ -1,0 +1,68 @@
+/* iDEALISTIC®: the "i" links to the Estonian company register entry, the "®" links to the EU trademark record.
+   Both are tinted with the site's blue so they read as links, and the word is never split. */
+
+#nav .brand,
+.footer .brand {
+    display: inline-block;
+    gap: 0;
+}
+
+.brand-i,
+.brand-r {
+    color: #60a5fa;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.brand-i:hover,
+.brand-r:hover,
+.brand-i:focus-visible,
+.brand-r:focus-visible {
+    color: #93c5fd;
+    text-shadow: 0 0 18px rgba(96, 165, 250, 0.55);
+}
+
+/* Keep the three parts of the name on one line */
+.brand-word {
+    white-space: nowrap;
+}
+
+/* Headline spans are gradient text; the brand keeps plain white with its blue links */
+.hero h1 span.brand-word {
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: var(--ink);
+}
+
+/* The footer styles every link as a block-level list item, so undo that here */
+.footer-grid a.brand-i,
+.footer-grid a.brand-r {
+    display: inline;
+    margin: 0;
+    color: #60a5fa;
+    font-size: inherit;
+}
+
+.footer-grid a.brand-i:hover,
+.footer-grid a.brand-r:hover {
+    color: #93c5fd;
+}
+
+/* Links inside headings (e.g. the plan names on the home page) get the same blue hint */
+h2 a {
+    color: #60a5fa;
+    transition: color 0.25s ease;
+}
+
+h2 a:hover {
+    color: #93c5fd;
+}
+
+/* In the large headline the ® sits small at the top, like a superscript */
+.hero h1 .brand-r {
+    font-size: 0.3em;
+    vertical-align: top;
+    line-height: 1.4;
+}

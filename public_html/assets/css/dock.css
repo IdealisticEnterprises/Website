@@ -1,0 +1,340 @@
+/* macOS-style Dock at the bottom of the screen.
+   Colourful app icons of one size; dock.js magnifies them towards the mouse (--dock-scale). */
+
+:root {
+    --dock-size: 52px;
+    --dock-gap: 10px;
+    --dock-pad: 8px;
+}
+
+/* Keep the end of every page clear of the Dock */
+body {
+    padding-bottom: calc(var(--dock-size) + 2 * var(--dock-pad) + 40px + env(safe-area-inset-bottom, 0px));
+}
+
+.dock {
+    position: fixed;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--dock-gap);
+    height: calc(var(--dock-size) + 2 * var(--dock-pad));
+    padding: var(--dock-pad) calc(var(--dock-pad) + 2px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 24px !important;
+    background: rgba(28, 30, 38, 0.42);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    backdrop-filter: blur(26px) saturate(180%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        0 20px 50px rgba(0, 0, 0, 0.45);
+    transform: translateX(-50%);
+    view-transition-name: dock;
+}
+
+.dock-item {
+    position: relative;
+    display: block;
+    flex: none;
+    width: calc(var(--dock-size) * var(--dock-scale, 1));
+    height: calc(var(--dock-size) * var(--dock-scale, 1));
+    transition: width 0.16s cubic-bezier(0.32, 0.72, 0, 1), height 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* The app icon: a rounded square filled edge to edge with the app's own colour */
+.dock-icon {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 23% !important;
+    background: var(--tile, linear-gradient(180deg, #6b7280, #374151));
+    color: #fff;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.18),
+        0 6px 14px rgba(0, 0, 0, 0.38);
+    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), filter 0.25s ease;
+}
+
+/* Glossy top light, like the macOS icon material */
+.dock-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 48%);
+    pointer-events: none;
+}
+
+.dock-icon svg {
+    position: relative;
+    width: 54%;
+    height: 54%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
+.dock-item:active .dock-icon {
+    filter: brightness(0.82);
+}
+
+/* App colours */
+.dock-item[data-app="home"]      { --tile: linear-gradient(180deg, #6cc6ff 0%, #1677ff 100%); }
+.dock-item[data-app="doremi"]    { --tile: linear-gradient(180deg, #6ef08a 0%, #1fb84b 100%); }
+.dock-item[data-app="club"]      { --tile: linear-gradient(180deg, #ffd66b 0%, #ff9500 100%); }
+.dock-item[data-app="apps"]      { --tile: linear-gradient(180deg, #d58cff 0%, #7b3cf2 100%); }
+.dock-item[data-app="community"] { --tile: linear-gradient(180deg, #ff8aa5 0%, #ff2d55 100%); }
+.dock-item[data-app="work"]      { --tile: linear-gradient(180deg, #a3aab5 0%, #4b5260 100%); }
+
+/* Running-app dot under the current page */
+.dock-item[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    bottom: calc(-1 * var(--dock-pad) + 1px);
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateX(-50%);
+}
+
+/* Name above the hovered icon, like the Dock */
+.dock-label {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    padding: 5px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px !important;
+    background: rgba(28, 30, 38, 0.78);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    color: #f5f7fb;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity 0.16s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (hover: hover) {
+    .dock-item:hover .dock-label {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.dock-item:focus-visible {
+    outline: none;
+}
+
+.dock-item:focus-visible .dock-icon {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(96, 165, 250, 0.7);
+}
+
+.dock-item:focus-visible .dock-label {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* Separator and the button that moves the Dock between the bottom and the top island */
+.dock-separator {
+    flex: none;
+    align-self: center;
+    width: 1px;
+    height: calc(var(--dock-size) * 0.7);
+    margin: 0 2px;
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.dock-toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+/* The move button is a bare glyph: no tile behind it, so it never reads as an app */
+.dock-toggle .dock-icon {
+    background: none;
+    border: 0;
+    box-shadow: none;
+    color: rgba(245, 247, 251, 0.78);
+    transition: color 0.25s ease, transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dock-toggle .dock-icon::before {
+    display: none;
+}
+
+.dock-toggle:hover .dock-icon,
+.dock-toggle:focus-visible .dock-icon {
+    color: #fff;
+}
+
+.dock-toggle:focus-visible .dock-icon {
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.8);
+}
+
+.dock-toggle .dock-icon svg {
+    transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html[data-dock="top"] .dock-toggle .dock-icon svg {
+    transform: rotate(180deg);
+}
+
+/* Dock at the top: the icons sit in the middle of the island, which becomes the shelf */
+html[data-dock="top"] body {
+    padding-bottom: 0;
+}
+
+/* Until dock.js moves it into the island, never show the Dock at the bottom for "top" visitors */
+html[data-dock="top"] body > .dock {
+    visibility: hidden;
+}
+
+html[data-dock="top"] #nav.nav {
+    overflow: visible;
+}
+
+html[data-dock="top"] #nav.nav.island-intro {
+    overflow: clip;
+}
+
+html[data-dock="top"] #nav .dock {
+    --dock-size: 36px;
+    --dock-gap: 12px;
+    /* landing.css hides any <nav> inside the top bar on narrow screens; the Dock must stay visible */
+    display: flex;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    bottom: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    align-items: center;
+    transform: translate(-50%, -50%);
+}
+
+/* In the island, icons magnify downwards without moving the island's layout */
+html[data-dock="top"] #nav .dock-item {
+    width: var(--dock-size);
+    height: var(--dock-size);
+}
+
+html[data-dock="top"] #nav .dock-item .dock-icon {
+    transform-origin: 50% 0;
+    transform: scale(var(--dock-scale, 1));
+    transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1), filter 0.25s ease;
+}
+
+html[data-dock="top"] #nav .dock-toggle .dock-icon {
+    transform: scale(var(--dock-scale, 1));
+}
+
+html[data-dock="top"] #nav .dock-label {
+    top: calc(100% + 12px + (var(--dock-scale, 1) - 1) * var(--dock-size));
+    bottom: auto;
+    transform: translate(-50%, -4px);
+    transition: opacity 0.16s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), top 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (hover: hover) {
+    html[data-dock="top"] #nav .dock-item:hover .dock-label {
+        transform: translate(-50%, 0);
+    }
+}
+
+html[data-dock="top"] #nav .dock-item[aria-current="page"]::after {
+    bottom: -6px;
+}
+
+/* Narrow screens: the icons get their own row inside the island */
+@media (max-width: 760px) {
+    html[data-dock="top"] #nav.nav {
+        flex-wrap: wrap;
+    }
+
+    /* The island is taller with the icon row, so page content starts lower */
+    html[data-dock="top"] .hero,
+    html[data-dock="top"] .legal-head {
+        padding-top: 190px;
+    }
+
+    html[data-dock="top"] #nav .dock {
+        --dock-size: 34px;
+        --dock-gap: 8px;
+        position: static;
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        margin: 10px 0 6px 0;
+        transform: none;
+    }
+}
+
+@media (max-width: 380px) {
+    html[data-dock="top"] #nav .dock {
+        --dock-size: 30px;
+        --dock-gap: 6px;
+    }
+}
+
+/* Phones: a smaller Dock, no magnification, a gentle press instead */
+@media (max-width: 560px) {
+    :root {
+        --dock-size: 44px;
+        --dock-gap: 8px;
+        --dock-pad: 7px;
+    }
+
+    .dock {
+        border-radius: 22px !important;
+    }
+
+    .dock-item:active .dock-icon {
+        transform: scale(0.9);
+    }
+}
+
+@media (max-width: 380px) {
+    :root {
+        --dock-size: 40px;
+        --dock-gap: 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dock-item,
+    .dock-icon,
+    .dock-label {
+        transition-duration: 0.01s !important;
+    }
+}
+
+/* Browsers without backdrop blur get a solid shelf */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .dock {
+        background: rgba(22, 24, 30, 0.94);
+    }
+}
