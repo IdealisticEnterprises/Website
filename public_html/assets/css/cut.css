@@ -42,13 +42,11 @@ li {
     margin-bottom: -0.2em;
 }
 
-/* One-line boxes (buttons, pills, labels, the brand): a single cut through the middle of the whole box,
-   so padding, rounded corners, borders and glows stay intact */
+/* One-line boxes (pills, labels, the brand): a single cut through the middle of the whole box,
+   so padding, rounded corners and borders stay intact. Buttons are never cut. */
 .eyebrow,
 .brand,
-.button,
 .footer-grid > div > a,
-.plan-picker a,
 .dock-label {
     --cut-box-mask: linear-gradient(
         to bottom,
@@ -76,8 +74,17 @@ li {
 
 /* Visitors who ask their system for more contrast get uncut text */
 @media (prefers-contrast: more) {
-    h1, h2, h3, h4, p, li, .eyebrow, .brand, .button, .footer-grid > div > a, .plan-picker a, .dock-label {
+    h1, h2, h3, h4, p, li, .eyebrow, .brand, .footer-grid > div > a, .dock-label {
         -webkit-mask-image: none;
         mask-image: none;
     }
+}
+
+/* Text in buttons is never cut (including button-like links inside cut blocks) */
+.button,
+.plan-picker a,
+.dock-toggle,
+button {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
 }

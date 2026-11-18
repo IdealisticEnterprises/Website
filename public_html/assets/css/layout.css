@@ -1,0 +1,308 @@
+/* Layout: compact vertical rhythm, then screen sizes and shapes
+   (phones, tablets, short landscape screens, large and ultra-wide monitors).
+   Loaded last, so it overrides the spacing in landing.css, footer.css, legal.css and club.css. */
+
+/* ---------- Compact spacing (all screens) ---------- */
+
+section {
+    padding: 56px 0;
+}
+
+.hero,
+.hero.compact {
+    min-height: 0;
+    padding: 112px 0 24px 0;
+}
+
+.hero h1 {
+    font-size: clamp(2.6rem, 7vw, 6rem);
+}
+
+.eyebrow {
+    margin-bottom: 16px;
+}
+
+.lead {
+    margin-top: 18px;
+}
+
+.actions {
+    margin-top: 22px;
+}
+
+h2 {
+    font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+}
+
+.label {
+    margin-bottom: 10px;
+}
+
+.section-text {
+    margin-top: 10px;
+}
+
+.grid {
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.step,
+.fix {
+    padding: 24px 22px;
+}
+
+.human,
+.opensource {
+    padding: 28px 28px;
+}
+
+.human h2,
+.opensource h2 {
+    margin-bottom: 10px;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.plan {
+    padding: 24px 22px 22px 22px;
+}
+
+.plan-price {
+    margin: 10px 0 14px 0;
+}
+
+.plan ul {
+    margin-bottom: 18px;
+}
+
+.plan-tier {
+    margin-bottom: 10px;
+}
+
+.plan-picker {
+    margin-top: 18px;
+}
+
+#plans {
+    padding-bottom: 0;
+}
+
+.plan-group,
+.plan-group + .plan-group {
+    padding: 28px 0 0 0;
+}
+
+.plan-group:last-of-type {
+    padding-bottom: 40px;
+}
+
+/* Legal pages */
+.legal-head {
+    padding: 112px 0 20px 0;
+}
+
+.legal-head h1 {
+    font-size: clamp(2.2rem, 6vw, 4.4rem);
+}
+
+.legal-meta {
+    margin-top: 18px;
+}
+
+.legal-intro {
+    margin-top: 18px;
+}
+
+.legal-layout {
+    gap: 24px;
+    padding-bottom: 40px;
+}
+
+.legal-section {
+    padding: 26px 28px;
+}
+
+/* Footer */
+.footer {
+    padding: 40px 0 24px 0;
+}
+
+.footer-grid {
+    gap: 28px;
+}
+
+.footer-grid p {
+    margin-top: 10px;
+}
+
+.footer .copyright {
+    margin-top: 28px;
+    padding-top: 18px;
+}
+
+/* ---------- Tablets (portrait and small landscape) ---------- */
+
+@media (max-width: 1020px) {
+    .grid.three {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 640px) {
+    .wrap,
+    .footer .wrap {
+        padding: 0 16px;
+    }
+
+    section {
+        padding: 36px 0;
+    }
+
+    .hero,
+    .hero.compact {
+        padding: 96px 0 12px 0;
+    }
+
+    .hero h1 {
+        font-size: clamp(2.3rem, 11vw, 3.4rem);
+    }
+
+    .legal-head {
+        padding: 96px 0 12px 0;
+    }
+
+    .grid.three,
+    .grid.halves,
+    .grid.four,
+    .grid.four.plans {
+        grid-template-columns: 1fr;
+    }
+
+    .step,
+    .fix,
+    .plan,
+    .legal-section {
+        padding: 20px 18px;
+    }
+
+    .human,
+    .opensource {
+        padding: 22px 18px;
+    }
+
+    .actions {
+        gap: 10px;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+    }
+
+    .footer-grid > div:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---------- Short landscape screens (phones turned sideways, small laptop windows) ---------- */
+
+@media (max-height: 520px) and (orientation: landscape) {
+    :root {
+        --dock-size: 38px;
+        --dock-gap: 6px;
+        --dock-pad: 5px;
+    }
+
+    .dock {
+        bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #nav.nav {
+        top: 8px;
+    }
+
+    .hero,
+    .hero.compact,
+    .legal-head {
+        padding-top: 78px;
+    }
+
+    .hero h1 {
+        font-size: clamp(2rem, 11vh, 3.2rem);
+    }
+
+    section {
+        padding: 28px 0;
+    }
+}
+
+/* ---------- Large monitors ---------- */
+
+@media (min-width: 1600px) {
+    :root {
+        --island-full: min(1400px, calc(100% - 64px));
+    }
+
+    .wrap,
+    .footer .wrap {
+        width: min(1440px, 100%);
+    }
+}
+
+/* ---------- Ultra-wide and 4K monitors: scale everything up so it reads at a distance ---------- */
+
+@media (min-width: 2200px) {
+    html {
+        font-size: 18px;
+    }
+
+    :root {
+        --island-full: min(1700px, calc(100% - 96px));
+        --dock-size: 60px;
+    }
+
+    .wrap,
+    .footer .wrap {
+        width: min(1760px, 100%);
+    }
+
+    .grid.three {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 3000px) {
+    html {
+        font-size: 21px;
+    }
+
+    :root {
+        --island-full: min(2100px, calc(100% - 128px));
+        --dock-size: 68px;
+    }
+
+    .wrap,
+    .footer .wrap {
+        width: min(2160px, 100%);
+    }
+}
+
+/* Very wide but not very tall (21:9 and 32:9): keep headlines from eating the whole screen height */
+@media (min-aspect-ratio: 21/9) and (min-width: 1600px) {
+    .hero h1 {
+        font-size: clamp(3rem, 9vh, 7rem);
+    }
+}
+
+/* Links inside footer sentences (emails, "Also at" domains) stay inline; only the column lists are stacked */
+.footer-grid p a:not(.brand) {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+}
