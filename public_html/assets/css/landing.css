@@ -207,6 +207,15 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
     overflow: hidden;
 }
 
+/* Clip only sideways (the background mark reaches past the right edge). Clipping the bottom too cut the glow
+   under the hero's button off in a hard line where a short page ends. */
+@supports (overflow-x: clip) {
+    .hero {
+        overflow: visible;
+        overflow-x: clip;
+    }
+}
+
 .hero::before {
     content: '';
     position: absolute;

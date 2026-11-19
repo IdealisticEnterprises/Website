@@ -21,12 +21,7 @@
         <priority>0.60</priority>
     </url>
     <url>
-        <loc>https://idealistic.enterprises/community/</loc>
-        <lastmod>2026-11-19</lastmod>
-        <priority>0.60</priority>
-    </url>
-    <url>
-        <loc>https://idealistic.enterprises/contact/</loc>
+        <loc>https://idealistic.enterprises/email/</loc>
         <lastmod>2026-11-19</lastmod>
         <priority>0.60</priority>
     </url>
@@ -54,5 +49,30 @@
         <loc>https://idealistic.enterprises/instructions/user_data_deletion/</loc>
         <lastmod>2026-11-19</lastmod>
         <priority>0.40</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/news/</loc>
+        <lastmod>2026-11-19</lastmod>
+        <priority>0.60</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/sales/</loc>
+        <lastmod>2026-11-19</lastmod>
+        <priority>0.60</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/discounts/</loc>
+        <lastmod>2026-11-19</lastmod>
+        <priority>0.60</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/giveaways/</loc>
+        <lastmod>2026-11-19</lastmod>
+        <priority>0.60</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/ads/</loc>
+        <lastmod>2026-11-19</lastmod>
+        <priority>0.60</priority>
     </url>
 </urlset>

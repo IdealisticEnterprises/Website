@@ -439,7 +439,7 @@ html.island-hosting #nav .dock {
         touch-action: none;
     }
 
-    /* The hint: shown under the island the first few times, then it fades away */
+    /* The hint: shown under the island each time a page opens, then it fades away */
     .preview-hint {
         position: absolute;
         top: calc(var(--island-h, 60px) + 10px);
@@ -485,15 +485,38 @@ html.island-widening #nav.nav.is-compact {
         box-shadow 0.3s ease;
 }
 
-/* Link bubbles and link-list pages cannot be slid away: no grab handle, and the bar scrolls/taps normally */
-@media (max-width: 820px) {
-    .preview:not(.is-page) .preview-grab,
-    .preview.no-slide .preview-grab {
-        display: none;
-    }
+/* Corner rounding of the open app.
+   - Top corners: exactly the island's own round ends (half its height), open or closed, so the ✕ keeps the
+     same distance from the edge as the theme button has in the closed island (the curves are concentric).
+   - Bottom corners: start as the island's round ends and grow with the shell, to 30px on wide screens and
+     40px on phones (following the screen's own rounded corners). They grow together with the height, so the
+     corners never have to be squeezed while the shell is still short.
+   - Safari (and every browser on iPhone) can leave an iframe unclipped by its parent's rounded corners, so
+     the app content is clipped to the same bottom corners itself. */
+:root {
+    --sheet-r: 30px;
+}
 
-    .preview:not(.is-page) .preview-bar,
-    .preview.no-slide .preview-bar {
-        touch-action: auto;
+.preview-sheet {
+    --sheet-top-r: calc(var(--island-h, 60px) / 2);
+    --sheet-bottom-r: var(--sheet-top-r);
+    border-radius: var(--sheet-top-r) var(--sheet-top-r) var(--sheet-bottom-r) var(--sheet-bottom-r) !important;
+    transition:
+        height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        border-bottom-left-radius 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+        border-bottom-right-radius 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.preview.is-open .preview-sheet {
+    --sheet-bottom-r: var(--sheet-r);
+}
+
+.preview-body {
+    clip-path: inset(0 round 0 0 calc(var(--sheet-r) - 1px) calc(var(--sheet-r) - 1px));
+}
+
+@media (max-width: 820px) {
+    :root {
+        --sheet-r: 40px;
     }
 }

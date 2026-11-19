@@ -492,13 +492,7 @@ html[data-theme="light"] .preview-bar {
         background: rgba(15, 20, 30, 0.75);
     }
 
-    html[data-theme="light"] .dock-pages button {
-        background: rgba(15, 20, 30, 0.22);
-    }
 
-    html[data-theme="light"] .dock-pages button[aria-current="true"] {
-        background: rgba(15, 20, 30, 0.7);
-    }
 }
 
 /* While an app is open, the theme button is the ✕ that closes it */

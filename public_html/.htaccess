@@ -23,6 +23,18 @@ ErrorDocument 500 /500/index.html
     # idealistic.download and idealistic.app (Cloudflare) arrive as /downloadable: that is the Apps page
     RewriteRule ^downloadable/?$ /apps/ [R=301,L]
 
+    # Each domain can simply be sent by Cloudflare to /<its name>: these lead on to its page
+    #   .click, .gives, .discount, .sale, .help / .contact (.email is /email itself), .shop
+    # Announcements used to be /announcements: they are News now
+    # The email page used to be /contact: old links lead on to /email
+    RewriteRule ^announcements/?$ /news/ [R=301,L]
+    RewriteRule ^click/?$ /ads/ [R=301,L]
+    RewriteRule ^gives/?$ /giveaways/ [R=301,L]
+    RewriteRule ^discount/?$ /discounts/ [R=301,L]
+    RewriteRule ^sale/?$ /sales/ [R=301,L]
+    RewriteRule ^(help|contact)/?$ /email/ [R=301,L]
+    RewriteRule ^shop/?$ /club/ [R=301,L]
+
     # Terms of Service and Terms of Use are the same terms
     RewriteRule ^terms/terms_of_service/?$ /terms/terms_of_use/ [R=301,L]
 

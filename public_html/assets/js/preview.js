@@ -21,6 +21,8 @@
     discord: {name: 'Discord', host: 'discord.com', text: 'Use iDEALISTIC® in Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
     x: {name: 'X', host: 'x.com', text: 'Use iDEALISTIC® on X.', logo: 'x', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'X'},
     twitter: 'x',
+    // idealistic.community leads to our Discord server
+    'idealistic.community': {name: 'Community', host: 'idealistic.community', text: 'The iDEALISTIC® community, on Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
     github: {name: 'GitHub', host: 'github.com', text: 'IdealisticEnterprises on GitHub.', logo: 'github', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'G'},
     'spartan.top': {name: 'Spartan AntiCheat', host: 'spartan.top', text: 'Another product by Idealistic OÜ.', tile: 'linear-gradient(180deg, #ff8a6b, #d9381e)', glyph: 'S'},
     'ariregister.rik.ee': {name: 'Estonian Business Register', host: 'ariregister.rik.ee', text: 'The official company record of Idealistic OÜ.', tile: 'linear-gradient(180deg, #6cc6ff, #0b5cad)', glyph: 'E'},
@@ -34,8 +36,15 @@
     'idealistic.work': '/work/',
     'idealistic.download': '/apps/',
     'idealistic.app': '/apps/',
-    'idealistic.community': '/community/',
     'idealistic.ai': '/ai/',
+    'idealistic.click': '/ads/',
+    'idealistic.gives': '/giveaways/',
+    'idealistic.discount': '/discounts/',
+    'idealistic.sale': '/sales/',
+    'idealistic.email': '/email/',
+    'idealistic.help': '/email/',
+    'idealistic.contact': '/email/',
+    'idealistic.shop': '/club/',
     'idealistic.enterprises': null
   };
 
@@ -43,9 +52,13 @@
     '/club/': 'idealistic.club',
     '/doremi/': 'doremi.chat',
     '/work/': 'idealistic.work',
-    '/apps/': 'idealistic.download',
-    '/community/': 'idealistic.community',
-    '/ai/': 'idealistic.ai'
+    '/apps/': 'idealistic.app',
+    '/ai/': 'idealistic.ai',
+    '/ads/': 'idealistic.click',
+    '/giveaways/': 'idealistic.gives',
+    '/discounts/': 'idealistic.discount',
+    '/sales/': 'idealistic.sale',
+    '/email/': 'idealistic.email'
   };
 
   const SHORT_LINK_HOSTS = ['idealistic.chat', 'idealistic.enterprises', location.hostname];
@@ -86,6 +99,14 @@
       && !/\.[a-z0-9]{2,5}$/i.test(url.pathname);
   }
 
+  // Legal pages (terms, policies, instructions) load as ordinary pages, never inside the panel
+  function isStandalone(url) {
+    return url.origin === location.origin && /^\/(terms|policies|instructions)(\/|$)/.test(url.pathname);
+  }
+
+  // Home itself, or a legal page that loaded on its own
+  const ON_HOME = location.pathname === '/' || location.pathname === '/index.html';
+
   // Inside the sheet, a page hands every link it cannot handle itself up to the page around it
   if (EMBEDDED) {
     document.addEventListener('click', function (event) {
@@ -109,6 +130,12 @@
       if (url.origin === location.origin && (url.pathname === '/' || url.pathname === '/index.html') && !url.hash) {
         event.preventDefault();
         window.parent.postMessage({type: 'preview-close'}, location.origin);
+        return;
+      }
+      // A legal page replaces the whole window, outside the panel
+      if (isStandalone(url)) {
+        event.preventDefault();
+        window.top.location.href = url.href;
         return;
       }
       // Same-page anchors and other pages of this site simply load inside the sheet
@@ -162,6 +189,7 @@
   let isOpen = false;
   let hideTimer = null;
   let widenTimer = null;
+  let hintTimer = null;
 
   // Only transform and opacity animate (graphics chip only), so it stays smooth on slow machines
   // Put the island and the shell back exactly as they were (no drag offsets, fully visible)
@@ -187,7 +215,7 @@
   }
 
   // The shell starts where the island is, with its size, and grows to host the app (and back again)
-  function measure() {
+  function measure(deferShrink) {
     const nav = document.getElementById('nav');
     const panel = sheet.querySelector('.preview-sheet');
     const body = sheet.querySelector('.preview-body');
@@ -230,31 +258,38 @@
     panel.style.setProperty('--bar-left', barLeft + 'px');
     panel.style.setProperty('--bar-right', barRight + 'px');
     panel.style.setProperty('--open-h', Math.max(openH, islandH + 120) + 'px');
-    panel.style.setProperty('--body-h', Math.max(openH - islandH, 60) + 'px');
+    const bodyH = Math.max(openH - islandH, 60);
+    const oldBodyH = parseFloat(panel.style.getPropertyValue('--body-h')) || 0;
+    clearTimeout(shrinkTimer);
+
+    // Shrinking while open: the content keeps its size until the shell has finished getting shorter, so the
+    // bottom never shows a gap (growing needs no wait: the shell simply reveals more of it)
+    if (deferShrink && bodyH < oldBodyH && !reduceMotion.matches) {
+      shrinkTimer = setTimeout(function () {
+        panel.style.setProperty('--body-h', bodyH + 'px');
+      }, 500);
+    } else {
+      panel.style.setProperty('--body-h', bodyH + 'px');
+    }
   }
 
-  function showHint() {
-    // Only full pages show it: a link bubble is small and the hint would cover it
-    if (!touchScreen.matches || !canSlide()) {
-      return;
+  // The Dock moved (into the island or back to the bottom) while an app is open: the shell follows it,
+  // stopping above the Dock at the bottom and using the full height when the Dock is in the island
+  let shrinkTimer = null;
+  new MutationObserver(function () {
+    if (isOpen && sheet && !sheet.hidden) {
+      measure(true);
     }
-    let seen = 0;
+  }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-dock']});
 
-    try {
-      seen = parseInt(localStorage.getItem('slide-hint') || '0', 10);
-    } catch (error) {
-      seen = 0;
-    }
-    if (seen >= 3) {
+  function showHint() {
+    // Shown on every page opened on a touch screen (a link bubble is small and the hint would cover it)
+    if (!touchScreen.matches || !sheet.classList.contains('is-page')) {
       return;
-    }
-    try {
-      localStorage.setItem('slide-hint', String(seen + 1));
-    } catch (error) {
-      // fine
     }
     sheet.classList.add('show-hint');
-    setTimeout(function () {
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () {
       sheet.classList.remove('show-hint');
     }, 2800);
   }
@@ -375,7 +410,6 @@
     sheet.querySelector('.preview-host').textContent = display;
     // Our own domains lead to their own address; pages of this site are already where they belong
     const path = sameSite ? url.pathname : (pagePath || null);
-    sheet.classList.toggle('no-slide', LINK_LISTS.indexOf(path) !== -1);
     markDock(path);
     let first = true;
 
@@ -488,21 +522,14 @@
     }
   }
 
-  // Phones and portrait tablets: grab the top of the island and slide it in any direction to close it.
-  // The whole island (its row and the app) follows the finger; let go far enough, or flick, and it flies off
-  // that way. Otherwise it springs back.
+  // Phones and portrait tablets: grab the top of the app and slide it in any direction to close it.
+  // The app follows the finger while the island (brand and ✕) stays where it is, with its own glass back;
+  // let go far enough, or flick, and the app flies off that way. Otherwise it springs back into the island.
   const touchScreen = window.matchMedia('(max-width: 820px)');
-  // Pages that are just lists of links: tapping them should never start a slide
-  const LINK_LISTS = ['/apps/'];
-
-  function canSlide() {
-    return sheet.classList.contains('is-page') && !sheet.classList.contains('no-slide');
-  }
 
   function enableDrag() {
     const panel = sheet.querySelector('.preview-sheet');
     const backdrop = sheet.querySelector('.preview-backdrop');
-    const nav = document.getElementById('nav');
     const zones = [sheet.querySelector('.preview-grab'), sheet.querySelector('.preview-bar')];
     let start = null;
     let delta = {x: 0, y: 0};
@@ -514,27 +541,27 @@
     function place(x, y) {
       const move = ' translate(' + x + 'px, ' + y + 'px)';
       panel.style.transform = 'translateX(-50%)' + move;
-      nav.style.transform = 'translateX(-50%)' + move;
       backdrop.style.opacity = String(Math.max(0, 1 - Math.hypot(x, y) / 500));
     }
 
     function reset(animated) {
       const ease = animated ? 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)' : 'none';
       panel.style.transition = ease;
-      nav.style.transition = ease;
       backdrop.style.transition = animated ? 'opacity 0.3s ease' : 'none';
       panel.style.transform = '';
-      nav.style.transform = '';
       backdrop.style.opacity = '';
+      // Back in place: the island hosts the app again
+      if (isOpen) {
+        document.documentElement.classList.add('island-hosting');
+      }
       setTimeout(function () {
         panel.style.transition = '';
-        nav.style.transition = '';
         backdrop.style.transition = '';
       }, animated ? 360 : 0);
     }
 
     function down(event) {
-      if (!touchScreen.matches || !isOpen || !canSlide() || flying || start || (event.pointerType === 'mouse' && event.button !== 0)) {
+      if (!touchScreen.matches || !isOpen || flying || start || (event.pointerType === 'mouse' && event.button !== 0)) {
         return;
       }
       zone = event.currentTarget;
@@ -558,9 +585,10 @@
         dragging = true;
         zone.setPointerCapture(event.pointerId);
         panel.style.transition = 'none';
-        nav.style.transition = 'none';
         backdrop.style.transition = 'none';
         sheet.classList.add('was-dragged');
+        // The island lets go of the app and keeps its own glass, so it never leaves with it
+        document.documentElement.classList.remove('island-hosting');
       }
       delta = {x: x, y: y};
       place(x, y);
@@ -605,11 +633,9 @@
         const far = Math.max(window.innerWidth, window.innerHeight) * 1.2;
         const ease = 'transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 0.32s ease';
         panel.style.transition = ease;
-        nav.style.transition = ease;
         backdrop.style.transition = 'opacity 0.3s ease';
         place(Math.cos(angle) * far, Math.sin(angle) * far);
         panel.style.opacity = '0';
-        nav.style.opacity = '0';
         flying = true;
         const token = openToken;
         setTimeout(function () {
@@ -619,19 +645,13 @@
           if (token === openToken) {
             close(false, true);
           }
-          // The island comes back in its place
+          // The app is gone; put the (hidden) shell back in place for next time
           panel.style.transition = 'none';
-          nav.style.transition = 'none';
           panel.style.transform = '';
-          nav.style.transform = '';
           panel.style.opacity = '';
-          void nav.offsetWidth;
-          nav.style.transition = 'opacity 0.3s ease';
-          nav.style.opacity = '';
           setTimeout(function () {
             panel.style.transition = '';
-            nav.style.transition = '';
-          }, 320);
+          }, 0);
         }, 320);
       } else {
         reset(true);
@@ -701,7 +721,14 @@
       openPage(url, display, false, pagePath);
       return true;
     }
+    if (isStandalone(url)) {
+      return false; // legal pages: an ordinary link
+    }
     if (isPage(url)) {
+      // A legal page that loaded on its own: Home is a real link from here (it closes an open app first)
+      if (!ON_HOME && (url.pathname === '/' || url.pathname === '/index.html')) {
+        return false;
+      }
       // Home is always behind every page: a link to Home just closes the sheet; anchors on Home behave as usual
       if (url.pathname === '/' || url.pathname === '/index.html') {
         if (!url.hash) {
@@ -771,7 +798,8 @@
   window.addEventListener('popstate', function () {
     if (historyEntry) {
       close(true);
-    } else if (location.pathname !== '/' && location.pathname !== '/index.html') {
+    } else if (location.pathname !== '/' && location.pathname !== '/index.html'
+      && !isStandalone(new URL(location.href))) {
       // Forward to a page that was open: show it again on top of Home
       openPage(new URL(location.href), shown(new URL(location.href)), true);
     }
@@ -806,7 +834,10 @@
   if (requested && requested.charAt(0) === '/' && requested.charAt(1) !== '/') {
     const target = new URL(requested, location.origin);
 
-    if (target.origin === location.origin && target.pathname !== '/') {
+    if (isStandalone(target)) {
+      // An old link to a legal page: show it on its own
+      location.replace(target.pathname + target.search + target.hash);
+    } else if (target.origin === location.origin && target.pathname !== '/') {
       history.replaceState(null, '', '/');
       openPage(target, shown(target), false);
     }

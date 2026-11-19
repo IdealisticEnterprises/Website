@@ -177,90 +177,78 @@
     place(saved);
   });
 
-  // Phones: an iPhone-style paged Dock, 4 apps per page, with page dots
+  // Phones: 4 apps at a time, a swipe moves 4 further (the last swipe shows the last 4). The apps beyond the
+  // edges peek in, blurred, only on the side where there are more: at first only on the right.
   const track = dock.querySelector('.dock-track');
-  const dots = dock.querySelector('.dock-pages');
   const PER_PAGE = 4;
 
   function maxScroll() {
     return track.scrollWidth - track.clientWidth;
   }
 
-  // The last page always shows 4 apps (the last 4), so it counts as the last page once scrolled to the end
-  function currentPage() {
-    if (!track) {
-      return 0;
-    }
-    const pages = dots.children.length;
-
-    if (pages > 1 && track.scrollLeft >= maxScroll() - 2) {
-      return pages - 1;
-    }
-    return Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
-  }
-
   function pageLeft(page) {
-    return Math.min(page * track.clientWidth, maxScroll());
+    const first = track.querySelector('.dock-item[data-app]');
+    const width = first ? first.getBoundingClientRect().width * PER_PAGE : track.clientWidth;
+    return Math.min(page * width, maxScroll());
   }
 
-  function updateDots() {
-    const page = currentPage();
-    Array.prototype.forEach.call(dots.children, function (dot, index) {
-      dot.setAttribute('aria-current', String(index === page));
+  function updateEdges() {
+    const phone = narrow.matches;
+    dock.classList.toggle('more-left', phone && track.scrollLeft > 2);
+    dock.classList.toggle('more-right', phone && track.scrollLeft < maxScroll() - 2);
+
+    // The apps outside the 4 in full view are the blurred ones peeking in. The blur follows the finger: it grows
+    // gradually as an app slides out past the edge of the 4 in full view, and fades as it slides back in.
+    const box = track.getBoundingClientRect();
+    const peek = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    const inLeft = box.left + peek;
+    const inRight = box.right - peek;
+    items.forEach(function (item) {
+      if (!item.hasAttribute('data-app')) {
+        return;
+      }
+      const r = item.getBoundingClientRect();
+      const outside = phone && r.width > 0
+        ? Math.max(0, inLeft - r.left) + Math.max(0, r.right - inRight) : 0;
+      const amount = Math.min(1, outside / (r.width * 0.75));
+      if (amount > 0.01) {
+        item.classList.add('is-peek');
+        item.style.setProperty('--peek-amount', amount.toFixed(3));
+      } else {
+        item.classList.remove('is-peek');
+        item.style.removeProperty('--peek-amount');
+      }
     });
   }
 
   function buildPages() {
-    if (!track || !dots) {
+    if (!track) {
       return;
     }
-    track.querySelectorAll('.dock-spacer').forEach(function (spacer) {
-      spacer.remove();
-    });
-    dots.textContent = '';
-
-    if (!narrow.matches) {
-      dots.hidden = true;
-      return;
-    }
-    const apps = items.filter(function (item) {
-      return item.hasAttribute('data-app');
-    });
-    const pages = Math.ceil(apps.length / PER_PAGE);
-    for (let page = 0; page < pages; page++) {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.setAttribute('aria-label', 'Apps, page ' + (page + 1) + ' of ' + pages);
-      dot.addEventListener('click', function () {
-        track.scrollTo({left: pageLeft(page), behavior: reduceMotion.matches ? 'auto' : 'smooth'});
+    // Start on the 4 that hold the app that is open
+    if (narrow.matches) {
+      const apps = items.filter(function (item) {
+        return item.hasAttribute('data-app');
       });
-      dots.appendChild(dot);
+      const current = dock.querySelector('.dock-item[aria-current="page"]');
+      const index = current ? apps.indexOf(current) : -1;
+      track.scrollLeft = index >= 0 ? pageLeft(Math.floor(index / PER_PAGE)) : 0;
     }
-    dots.hidden = pages < 2;
-
-    // Start on the page that holds the app that is open
-    const current = dock.querySelector('.dock-item[aria-current="page"]');
-    const index = current ? apps.indexOf(current) : -1;
-    track.scrollLeft = index >= 0 ? pageLeft(Math.floor(index / PER_PAGE)) : 0;
-    updateDots();
+    updateEdges();
   }
 
-  if (track && dots) {
-    let pageFrame = null;
+  if (track) {
+    let edgeFrame = null;
     track.addEventListener('scroll', function () {
-      if (pageFrame === null) {
-        pageFrame = requestAnimationFrame(function () {
-          pageFrame = null;
-          updateDots();
+      if (edgeFrame === null) {
+        edgeFrame = requestAnimationFrame(function () {
+          edgeFrame = null;
+          updateEdges();
         });
       }
     }, {passive: true});
     narrow.addEventListener('change', buildPages);
-    window.addEventListener('resize', function () {
-      if (narrow.matches) {
-        updateDots();
-      }
-    });
+    window.addEventListener('resize', updateEdges);
     buildPages();
   }
 

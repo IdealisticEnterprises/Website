@@ -93,6 +93,11 @@ body {
 .dock-item[data-app="apps"]      { --tile: linear-gradient(180deg, #d58cff 0%, #7b3cf2 100%); }
 .dock-item[data-app="community"] { --tile: linear-gradient(180deg, #ff8aa5 0%, #ff2d55 100%); }
 .dock-item[data-app="work"]      { --tile: linear-gradient(180deg, #a3aab5 0%, #4b5260 100%); }
+.dock-item[data-app="sales"]     { --tile: linear-gradient(180deg, #ff9a8b 0%, #e5262f 100%); }
+.dock-item[data-app="discounts"] { --tile: linear-gradient(180deg, #c8f07a 0%, #4f9a12 100%); }
+.dock-item[data-app="giveaways"] { --tile: linear-gradient(180deg, #f5a3ff 0%, #b5179e 100%); }
+.dock-item[data-app="news"]      { --tile: linear-gradient(180deg, #9aa2ff 0%, #4338ca 100%); }
+.dock-item[data-app="ads"]       { --tile: linear-gradient(180deg, #6ee7d8 0%, #0d8f84 100%); }
 
 /* Running-app dot under the current page */
 .dock-item[aria-current="page"]::after {
@@ -262,10 +267,6 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
     display: contents;
 }
 
-.dock-pages {
-    display: none;
-}
-
 .island-menu {
     display: none !important;
 }
@@ -386,31 +387,6 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
         display: none;
     }
 
-    /* Page dots */
-    .dock-pages {
-        display: flex;
-        justify-content: center;
-        gap: 7px;
-    }
-
-    .dock-pages[hidden] {
-        display: none;
-    }
-
-    .dock-pages button {
-        width: 7px;
-        height: 7px;
-        padding: 0;
-        border: 0;
-        border-radius: 50% !important;
-        background: rgba(255, 255, 255, 0.3);
-        cursor: pointer;
-        transition: background 0.2s ease;
-    }
-
-    .dock-pages button[aria-current="true"] {
-        background: rgba(255, 255, 255, 0.9);
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -459,5 +435,34 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
     /* The apps are links (<a>); the last one is the last <a> in the track */
     .dock-track > a.dock-item:last-of-type {
         scroll-snap-align: end;
+    }
+}
+
+/* Phone Dock: 4 apps in full, and the next ones peeking in at the edges, blurred, so people know to swipe.
+   They only peek where there are more apps: at first only on the right (dock.js marks them .is-peek).
+   No dots: neither page dots nor the running-app dot. */
+@media (max-width: 820px) {
+    /* The blurred apps continue right up to the Dock's border and stop there, following its rounded corners */
+    .dock {
+        --peek: 34px;
+        padding-bottom: 10px;
+        overflow: hidden;
+    }
+
+    .dock-track {
+        grid-auto-columns: 25%;
+        padding: 0 var(--peek);
+        scroll-padding: 0 var(--peek);
+    }
+
+    .dock .dock-item[aria-current="page"]::after {
+        display: none;
+    }
+
+    /* No transition here: animating the blur while the Dock scrolls cancels the swipe. Instead dock.js sets
+       --peek-amount (0 to 1) as the app slides out past the edge, so the blur grows gradually with it. */
+    .dock .dock-item.is-peek {
+        filter: blur(calc(var(--peek-amount, 1) * 3px));
+        opacity: calc(1 - var(--peek-amount, 1) * 0.4);
     }
 }

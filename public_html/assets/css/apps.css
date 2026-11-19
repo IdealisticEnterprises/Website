@@ -120,20 +120,13 @@ html[data-theme="light"] .app-logo-tip span {
     color: var(--muted);
 }
 
-/* The tip text is plain (no cut effect) */
-.app-logo-tip,
-.app-logo-tip * {
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
-}
-
 @media (hover: none) {
     .app-logo-tip {
         display: none;
     }
 }
 
-/* Above the card's (masked, so separately layered) text, so the notice is never see-through */
+/* Above the card's text, so the notice is never see-through */
 .app-logo {
     z-index: 3;
 }

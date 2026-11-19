@@ -1,7 +1,9 @@
 (function () {
   'use strict';
 
-  /* Contact form: Cloudflare Turnstile check, then POST to /api/contact (the contact Worker, see /workers/contact). */
+  /* Email forms (Contact, Discount request): Cloudflare Turnstile check, then POST to /api/contact
+     (the contact Worker, see /workers/contact). A form with data-form="discount" has a locked subject that
+     ends in a random request ID, made here; the Worker checks it and builds the subject itself. */
 
   const form = document.getElementById('contact-form');
 
@@ -15,6 +17,31 @@
   const siteKey = form.getAttribute('data-sitekey');
   let token = '';
   let widget = null;
+  const kind = form.getAttribute('data-form') || 'contact';
+  const uuidField = form.querySelector('[data-uuid]');
+  let requestId = '';
+
+  // A random version 4 UUID (crypto.randomUUID needs a secure page; the fallback builds the same format)
+  function newId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.prototype.map.call(bytes, function (byte) {
+      return byte.toString(16).padStart(2, '0');
+    }).join('');
+    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+  }
+
+  function nextId() {
+    if (uuidField) {
+      requestId = newId();
+      uuidField.textContent = requestId;
+    }
+  }
+  nextId();
 
   function say(text, kind) {
     status.textContent = text;
@@ -94,12 +121,21 @@
 
   function send() {
     const data = {
+      form: kind,
       email: form.elements.email.value,
-      subject: form.elements.subject.value,
       message: form.elements.message.value,
       website: form.elements.website.value,
       token: token
     };
+
+    if (kind === 'discount') {
+      data.uuid = requestId;
+      data.product = form.elements.product.value;
+      data.reason = form.elements.reason.value;
+    } else {
+      data.subject = form.elements.subject.value;
+    }
+    const sentId = requestId;
     submit.disabled = true;
     say('Sending…');
 
@@ -115,7 +151,14 @@
       if (result.ok) {
         form.reset();
         form.classList.add('is-sent');
-        say('Sent. A human will answer you by email.', 'ok');
+
+        if (kind === 'discount') {
+          // Keep the ID of this request in view; the next request gets a new one
+          say('Sent. Your request ID is ' + sentId + '. A human will answer you by email.', 'ok');
+          nextId();
+        } else {
+          say('Sent. A human will answer you by email.', 'ok');
+        }
       } else {
         say(result.error || 'Your message could not be sent. Please try again.', 'error');
       }
