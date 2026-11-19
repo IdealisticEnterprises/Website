@@ -1,0 +1,77 @@
+/* Performance: keep scrolling and animations smooth on phones, tablets and older computers.
+   Loaded last. Glass blur is expensive (it is recomputed every frame for everything that moves behind it),
+   so it is kept only where it defines the look: the island, the Dock and its labels, and the preview sheet. */
+
+/* 1. The page background used background-attachment: fixed, which repaints the whole background on every
+      scroll frame. A fixed layer behind the page looks the same and is moved by the graphics chip instead. */
+body {
+    background: var(--bg);
+    background-attachment: scroll;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(900px 600px at 78% -6%, rgba(59, 130, 246, 0.22), transparent 70%),
+        radial-gradient(800px 700px at 4% 38%, rgba(96, 165, 250, 0.09), transparent 70%),
+        radial-gradient(900px 600px at 96% 78%, rgba(59, 130, 246, 0.12), transparent 70%);
+    transform: translateZ(0);
+}
+
+/* 2. Cards and buttons: no glass blur (the background behind them is nearly flat anyway),
+      a slightly stronger fill instead, and a lighter shadow */
+.island:not(.nav),
+.button,
+.plan-picker a,
+.eyebrow,
+.legal-meta li {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.island:not(.nav) {
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+.button:not(.solid) {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+/* 3. Lighter blur where glass stays: same look, about half the work per frame */
+#nav.nav {
+    -webkit-backdrop-filter: blur(12px) saturate(170%);
+    backdrop-filter: blur(12px) saturate(170%);
+}
+
+@media (min-width: 821px) {
+    .dock {
+        -webkit-backdrop-filter: blur(16px) saturate(170%);
+        backdrop-filter: blur(16px) saturate(170%);
+    }
+}
+
+.dock-label {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(28, 30, 38, 0.92);
+}
+
+/* 4. Moving parts get their own layer up front, so starting an animation never stalls */
+#nav.nav,
+.dock {
+    will-change: transform;
+}
+
+/* No tap flash on phones; the island's resizing never affects the rest of the page */
+html {
+    -webkit-tap-highlight-color: transparent;
+}
+
+#nav.nav {
+    contain: layout style;
+}

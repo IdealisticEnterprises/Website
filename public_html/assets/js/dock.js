@@ -15,6 +15,7 @@
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
   const home = document.createComment('dock');
   const items = Array.from(dock.querySelectorAll('.dock-item'));
+  const narrow = window.matchMedia('(max-width: 820px)');
   let pointerX = null;
   let frame = null;
 
@@ -22,7 +23,8 @@
   dock.parentNode.insertBefore(home, dock);
 
   function place(position) {
-    if (position === 'top' && island) {
+    // Phones and portrait tablets always keep the links in the menu list, never inside the island
+    if (position === 'top' && island && !narrow.matches) {
       root.setAttribute('data-dock', 'top');
       island.insertBefore(dock, island.querySelector('.button'));
     } else {
@@ -112,6 +114,69 @@
     }
   }
 
+  // Menu list (phones and portrait tablets): the button in the island opens the links in the middle of the screen
+  const menuButton = document.querySelector('.island-menu');
+  const backdrop = document.createElement('div');
+  backdrop.className = 'menu-backdrop';
+  document.body.appendChild(backdrop);
+  items.forEach(function (item, index) {
+    item.style.setProperty('--i', index);
+  });
+
+  function setMenu(open) {
+    root.classList.toggle('menu-open', open);
+
+    if (menuButton) {
+      menuButton.setAttribute('aria-expanded', String(open));
+      menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+    if (open) {
+      const current = dock.querySelector('[aria-current="page"]') || items[0];
+      setTimeout(function () {
+        current.focus({preventScroll: true});
+      }, 50);
+    }
+  }
+
+  if (menuButton) {
+    menuButton.addEventListener('click', function () {
+      setMenu(!root.classList.contains('menu-open'));
+    });
+  }
+  backdrop.addEventListener('click', function () {
+    setMenu(false);
+  });
+  items.forEach(function (item) {
+    item.addEventListener('click', function () {
+      if (root.classList.contains('menu-open')) {
+        setTimeout(function () {
+          setMenu(false);
+        }, 150);
+      }
+    });
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && root.classList.contains('menu-open')) {
+      setMenu(false);
+      if (menuButton) {
+        menuButton.focus();
+      }
+    }
+  });
+
+  // Rotating a tablet or resizing a window across the breakpoint: put the Dock back where it belongs
+  narrow.addEventListener('change', function () {
+    setMenu(false);
+    let saved = 'bottom';
+
+    try {
+      saved = localStorage.getItem(KEY) === 'top' ? 'top' : 'bottom';
+    } catch (error) {
+      saved = 'bottom';
+    }
+    place(saved);
+  });
+
   // macOS Dock magnification: with a mouse, icons grow towards the pointer
   function apply() {
     frame = null;
@@ -138,7 +203,7 @@
   }
 
   dock.addEventListener('pointermove', function (event) {
-    if (event.pointerType !== 'mouse' || !finePointer.matches || reduceMotion.matches) {
+    if (event.pointerType !== 'mouse' || !finePointer.matches || reduceMotion.matches || narrow.matches) {
       return;
     }
     pointerX = event.clientX;

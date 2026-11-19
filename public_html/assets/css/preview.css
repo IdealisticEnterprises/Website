@@ -1,6 +1,7 @@
-/* Preview sheet for external links (preview.js).
-   Phones: a full-width sheet sliding up from the bottom. Larger screens: a centred window.
-   Square like every other background; only the island and the Dock are rounded. */
+/* Preview (preview.js): pages and links open in a panel shaped like the Dynamic Island, floating over the page.
+   The page behind is blurred, not darkened. Pages of this site load as an iframe; external sites that refuse
+   being framed show as a single message-like bubble. The round arrow leads to the app the link belongs to.
+   No animations: everything appears instantly. */
 
 .preview[hidden] {
     display: none;
@@ -12,71 +13,86 @@
     z-index: 100;
 }
 
+/* Blur, not darken */
 .preview-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(4, 6, 10, 0.55);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
-    backdrop-filter: blur(10px) saturate(140%);
-    opacity: 0;
-    transition: opacity 0.35s ease;
+    background: rgba(6, 7, 10, 0.12);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
 }
 
+/* The island-shaped panel */
 .preview-sheet {
     position: absolute;
+    top: calc(16px + env(safe-area-inset-top, 0px));
     left: 50%;
-    top: 50%;
     display: flex;
     flex-direction: column;
-    width: min(960px, calc(100% - 48px));
+    width: min(520px, calc(100% - 24px));
     margin: 0;
     padding: 0;
-    height: min(760px, calc(100% - 96px));
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: #0b0d12;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
-    opacity: 0;
-    transform: translate(-50%, -46%) scale(0.94);
-    transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 30px !important;
+    background: rgba(14, 16, 22, 0.86);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 24px 70px rgba(0, 0, 0, 0.5);
+    transform: translateX(-50%);
 }
 
-.preview.is-open .preview-backdrop {
-    opacity: 1;
-}
-
-.preview.is-open .preview-sheet {
-    opacity: 1;
-    transform: translate(-50%, -50%);
+/* Pages get nearly the whole screen, still island-shaped */
+.preview.is-page .preview-sheet {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: min(1180px, calc(100% - 24px));
 }
 
 .preview-bar {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 8px 8px 8px;
 }
 
-.preview-close {
+.preview.is-page .preview-bar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-close,
+.preview-go {
     display: grid;
     place-items: center;
     flex: none;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.07);
     color: #f5f7fb;
     cursor: pointer;
 }
 
-.preview-close svg {
+.preview-go {
+    border-color: transparent;
+    background: #3b82f6;
+}
+
+.preview-go[hidden] {
+    display: none;
+}
+
+.preview-close svg,
+.preview-go svg,
+.preview-card-go svg {
     width: 18px;
     height: 18px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .preview-where {
@@ -88,8 +104,11 @@
 }
 
 .preview-where strong {
+    overflow: hidden;
     color: #f5f7fb;
     font-size: 0.95rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .preview-host {
@@ -112,83 +131,299 @@
     width: 100%;
     height: 100%;
     border: 0;
-    background: #fff;
+    background: #06070a;
 }
 
+/* External site that refuses being framed: one message bubble that leads to the app */
 .preview-card {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 100%;
-    padding: 32px 24px;
-    text-align: center;
+    gap: 14px;
+    margin: 0 8px 8px 8px;
+    padding: 12px 12px 12px 12px;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f5f7fb;
+    text-decoration: none;
+}
+
+.preview-card:hover {
+    background: rgba(255, 255, 255, 0.09);
 }
 
 .preview-tile {
     display: grid;
     place-items: center;
-    width: 84px;
-    height: 84px;
-    margin-bottom: 8px;
+    flex: none;
+    width: 52px;
+    height: 52px;
     border-radius: 23% !important;
     color: #fff;
-    font-size: 2.2rem;
+    font-size: 1.4rem;
     font-weight: 800;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 12px 30px rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
-.preview-card h2 {
-    margin: 0;
-    font-size: clamp(1.6rem, 4vw, 2.2rem);
+.preview-card-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-right: auto;
+    line-height: 1.35;
+}
+
+.preview-card-text strong {
+    font-size: 1rem;
 }
 
 .preview-text {
-    margin: 0;
-    color: #c9d1dd;
-}
-
-.preview-note {
-    max-width: 420px;
-    margin: 4px 0 10px 0;
     color: #9aa4b5;
     font-size: 0.88rem;
-    line-height: 1.5;
 }
 
-/* The page behind does not scroll while the preview is open */
+.preview-card-go {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.1);
+    color: #f5f7fb;
+}
+
+/* The page behind does not scroll while the panel is open */
 html.preview-locked,
 html.preview-locked body {
     overflow: hidden;
 }
 
-/* Phones: a sheet from the bottom, nearly full height, like a native link preview */
+/* Phones: the same island, edge to edge with small margins */
 @media (max-width: 640px) {
     .preview-sheet {
-        left: 0;
-        top: auto;
-        bottom: 0;
-        width: 100%;
-        height: calc(100% - 44px - env(safe-area-inset-top, 0px));
-        border-width: 1px 0 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        width: calc(100% - 16px);
+        border-radius: 28px !important;
+    }
+
+    .preview.is-page .preview-sheet {
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: calc(100% - 16px);
+    }
+}
+
+/* Browsers without backdrop blur: a light tint instead */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .preview-backdrop {
+        background: rgba(6, 7, 10, 0.55);
+    }
+}
+
+/* ---------- A page shown inside the panel (prefs.js adds html.embedded) ---------- */
+/* The panel has its own bar, so the page drops its island, Dock, menu and footer */
+html.embedded #nav,
+html.embedded .dock,
+html.embedded .menu-backdrop,
+html.embedded .footer {
+    display: none !important;
+}
+
+html.embedded body {
+    padding-bottom: 24px;
+}
+
+html.embedded .hero,
+html.embedded .hero.compact,
+html.embedded .legal-head {
+    padding-top: 28px;
+}
+
+/* ---------- Wide screens: the Dock stays usable above the blur, so apps can be switched while one is open ---------- */
+@media (min-width: 821px) {
+    html.preview-locked body > .dock {
+        z-index: 101;
+    }
+
+    .preview.is-page .preview-sheet {
+        bottom: calc(var(--dock-size) + 2 * var(--dock-pad) + 30px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Dock at the top: the island (holding the Dock) stays above, and the panel opens below it */
+    html[data-dock="top"].preview-locked #nav.nav {
+        z-index: 101;
+    }
+
+    html[data-dock="top"] .preview-sheet {
+        top: calc(96px + env(safe-area-inset-top, 0px));
+    }
+
+    html[data-dock="top"] .preview.is-page .preview-sheet {
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+
+/* ---------- Open / close (preview.js toggles .is-open) ---------- */
+
+.preview-backdrop {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.preview.is-open .preview-backdrop {
+    opacity: 1;
+}
+
+/* Wide screens: grows out of the island area at the top */
+.preview-sheet {
+    opacity: 0;
+    transform-origin: 50% 0;
+    transform: translateX(-50%) translateY(-12px) scale(0.94);
+    transition:
+        transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+        opacity 0.22s ease;
+    will-change: transform;
+}
+
+.preview.is-open .preview-sheet {
+    opacity: 1;
+    transform: translateX(-50%);
+}
+
+/* Phones: slides up from the bottom, and back down when closed or dragged away */
+@media (max-width: 640px) {
+    .preview-sheet,
+    .preview.is-page .preview-sheet {
         opacity: 1;
-        transform: translateY(100%);
+        transform: translateX(-50%) translateY(110vh);
+        transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
     }
 
     .preview.is-open .preview-sheet {
-        transform: none;
+        transform: translateX(-50%);
     }
 
-    .preview-open-large {
-        width: 100%;
+    /* The bar is the handle: it takes the drag instead of scrolling the page */
+    .preview-bar {
+        position: relative;
+        padding-top: 16px;
+        touch-action: none;
+        cursor: grab;
+    }
+
+    .preview-bar::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        width: 36px;
+        height: 5px;
+        border-radius: 3px !important;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateX(-50%);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .preview-backdrop,
-    .preview-sheet {
+    .preview-sheet,
+    .preview.is-page .preview-sheet {
+        transition-duration: 0.01s !important;
+    }
+}
+
+/* Pages in the panel are transparent: the panel's own theme-coloured glass is their background */
+html.embedded,
+html.embedded body {
+    background: transparent !important;
+}
+
+html.embedded body::before {
+    display: none;
+}
+
+.preview-body iframe,
+html[data-theme="light"] .preview-body iframe {
+    background: transparent;
+}
+
+/* ---------- Close button: on the left; it moves to the right when the pointer goes to the top-right corner ---------- */
+.preview-sheet:focus {
+    outline: none;
+}
+
+/* An invisible corner zone at the right end of the bar holds the right-hand ✕ */
+.preview-corner {
+    display: flex;
+    justify-content: flex-end;
+    flex: none;
+    width: 160px;
+    margin-left: -160px;
+}
+
+.preview-close {
+    transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.preview-close-right {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.6);
+}
+
+.preview-bar:has(.preview-corner:hover) .preview-close-right {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+}
+
+.preview-bar:has(.preview-corner:hover) .preview-close-left {
+    opacity: 0;
+    transform: scale(0.6);
+}
+
+/* Touch screens cannot hover: the ✕ simply stays on the left */
+@media (hover: none) {
+    .preview-corner {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preview-close {
         transition-duration: 0.01s;
     }
+}
+
+
+/* The island (brand + theme button) stays usable above the blur; the panel opens just below it */
+html.preview-locked #nav.nav {
+    z-index: 101;
+}
+
+.preview-sheet {
+    top: calc(92px + env(safe-area-inset-top, 0px));
+}
+
+@media (max-width: 640px) {
+    .preview-sheet,
+    .preview.is-page .preview-sheet {
+        top: calc(82px + env(safe-area-inset-top, 0px));
+    }
+}
+
+/* The Dock and the island are always above the panel layer, so opening or closing an app never moves the
+   pointer "out" of the Dock (which flattened the magnified icons). While the panel fades out, it ignores the mouse. */
+@media (min-width: 821px) {
+    body > .dock {
+        z-index: 101;
+    }
+}
+
+#nav.nav {
+    z-index: 101;
+}
+
+.preview:not(.is-open) {
+    pointer-events: none;
 }

@@ -1,0 +1,21 @@
+# Contact form Worker. Deploy with:  npx wrangler deploy   (from this folder)
+# Then set the captcha secret once:   npx wrangler secret put TURNSTILE_SECRET
+name = "idealistic-contact"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+# Runs on the site's own address, so the form posts to the same origin
+routes = [
+  { pattern = "idealistic.enterprises/api/contact", zone_name = "idealistic.enterprises" }
+]
+
+[vars]
+TO_ADDRESS = "human@idealistic.ai"
+# Must be on a domain with Cloudflare Email Routing turned on
+FROM_ADDRESS = "contact@idealistic.enterprises"
+ALLOWED_ORIGINS = "https://idealistic.enterprises"
+
+# Cloudflare Email Routing: human@idealistic.ai must be a verified destination address
+[[send_email]]
+name = "CONTACT_EMAIL"
+destination_address = "human@idealistic.ai"

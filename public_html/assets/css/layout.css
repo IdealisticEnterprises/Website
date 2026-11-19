@@ -306,3 +306,58 @@ h2 {
     margin: 0;
     font-size: inherit;
 }
+
+/* ---------- Home: an empty, calm first screen ---------- */
+
+.home-hero {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 0 16px;
+    text-align: center;
+}
+
+.home-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.home-brand {
+    margin: 0;
+    font-size: clamp(3rem, 12vw, 9rem);
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 1;
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+}
+
+.home-brand .brand-r {
+    font-size: 0.28em;
+    vertical-align: top;
+    line-height: 1.6;
+}
+
+.home-line {
+    margin: 0;
+    color: var(--muted);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+/* The ® is the last character of the big brand: tight letter-spacing pushes it past the edge of the box, where
+   the cut-text mask would clip it. Give the box room on the right (taken back with a negative margin, so the
+   layout does not move) and no extra letter-spacing on the ® itself. */
+.home-brand,
+.hero h1 {
+    padding-right: 0.12em;
+    margin-right: -0.12em;
+}
+
+.home-brand .brand-r,
+.hero h1 .brand-r {
+    letter-spacing: 0;
+    padding-left: 0.04em;
+}

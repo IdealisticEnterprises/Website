@@ -1,0 +1,139 @@
+/* Apps page: app icons with a hover hint and trademark notice; buttons always at the bottom of each card. */
+
+/* Consistent button places: cards are columns and the button row is pushed to the bottom */
+.step {
+    display: flex;
+    flex-direction: column;
+}
+
+.step .actions {
+    margin-top: auto;
+    padding-top: 18px;
+}
+
+.app-card .label {
+    margin-top: 16px;
+}
+
+/* App icon */
+.app-logo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 23% !important;
+    background: var(--tile);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.16),
+        0 8px 18px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-logo:hover {
+    transform: translateY(-2px);
+}
+
+.app-logo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 50%);
+    pointer-events: none;
+}
+
+/* Brand glyph from the local SVG, painted white */
+.app-logo-glyph {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    background: #ffffff;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
+}
+
+.app-logo-svg svg {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Hover / focus: click hint and trademark notice */
+.app-logo-tip {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: max-content;
+    max-width: 260px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: rgba(18, 20, 26, 0.96);
+    color: #e6e9ef;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    text-align: left;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-logo-tip strong {
+    color: #ffffff;
+    font-size: 0.85rem;
+}
+
+.app-logo-tip span {
+    color: #9aa4b5;
+}
+
+.app-logo:hover .app-logo-tip,
+.app-logo:focus-visible .app-logo-tip {
+    opacity: 1;
+    transform: none;
+}
+
+html[data-theme="light"] .app-logo-tip {
+    background: rgba(255, 255, 255, 0.98);
+    color: var(--ink);
+    box-shadow: 0 12px 30px rgba(15, 20, 30, 0.12);
+}
+
+html[data-theme="light"] .app-logo-tip strong {
+    color: var(--ink);
+}
+
+html[data-theme="light"] .app-logo-tip span {
+    color: var(--muted);
+}
+
+/* The tip text is plain (no cut effect) */
+.app-logo-tip,
+.app-logo-tip * {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+}
+
+@media (hover: none) {
+    .app-logo-tip {
+        display: none;
+    }
+}
+
+/* Above the card's (masked, so separately layered) text, so the notice is never see-through */
+.app-logo {
+    z-index: 3;
+}

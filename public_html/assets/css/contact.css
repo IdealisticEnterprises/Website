@@ -1,0 +1,260 @@
+/* Email app: a macOS Mail compose window. No page around it: toolbar with Send, To / Subject / From rows,
+   and the message filling the rest. The captcha stays invisible unless Cloudflare needs a click. */
+
+html.embedded body:has(.compose-page),
+body:has(.compose-page) {
+    padding: 0 !important;
+}
+
+.compose-page {
+    height: 100vh;
+    height: 100dvh;
+}
+
+.compose {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, sans-serif;
+    color: var(--ink);
+}
+
+/* Toolbar */
+.compose-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.compose-send {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--blue-soft);
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.compose-send:hover {
+    color: var(--blue);
+}
+
+.compose-send:active {
+    transform: scale(0.9);
+}
+
+.compose-send:disabled {
+    color: var(--muted);
+    cursor: wait;
+}
+
+.compose-send svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.contact-status {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.contact-status.is-ok {
+    color: #16a34a;
+}
+
+.contact-status.is-error {
+    color: #ef4444;
+}
+
+/* Header rows */
+.compose-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    margin: 0 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.compose-label {
+    flex: none;
+    width: 62px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.compose-field input {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+.compose-field input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+.compose-field input:focus,
+.compose-body:focus {
+    outline: none;
+}
+
+/* To: the fixed recipient, blue like a Mail address */
+.compose-to {
+    flex: 1;
+    color: var(--blue-soft);
+    font-size: 0.95rem;
+}
+
+.compose-lock {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Message: fills the rest of the window */
+.compose-body {
+    flex: 1;
+    min-height: 160px;
+    width: 100%;
+    padding: 14px 16px 16px 16px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1.55;
+    resize: none;
+}
+
+/* Captcha: invisible unless a click is needed, then it sits at the bottom */
+.compose-check {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 14px;
+}
+
+.compose-check:has(iframe) {
+    padding-bottom: 10px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Honeypot: hidden from people, filled in by bots */
+.contact-trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* The window's text is plain, like Mail: no cut effect */
+.compose .contact-status,
+.compose label,
+.compose span {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+}
+
+html[data-theme="light"] .compose-to {
+    color: #2563eb;
+}
+
+/* ---------- Consistent compose layout: one left edge, full-width dividers, Send on the right ---------- */
+.compose-toolbar {
+    justify-content: space-between;
+    min-height: 54px;
+    padding: 8px 16px;
+}
+
+.compose-toolbar .contact-status {
+    order: 1;
+}
+
+.compose-send {
+    order: 2;
+    display: inline-flex;
+    gap: 8px;
+    width: auto;
+    height: 36px;
+    margin-left: auto;
+    padding: 0 16px;
+    background: var(--blue);
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.compose-send:hover {
+    color: #ffffff;
+    filter: brightness(1.08);
+}
+
+.compose-send:disabled {
+    color: #ffffff;
+    opacity: 0.6;
+}
+
+.compose-send svg {
+    width: 17px;
+    height: 17px;
+}
+
+.compose-field {
+    gap: 12px;
+    min-height: 46px;
+    margin: 0;
+    padding: 0 16px;
+}
+
+.compose-label {
+    width: 64px;
+    text-align: left;
+}
+
+.compose-body {
+    padding: 16px;
+}
+
+.compose-body::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+    .compose-label {
+        width: 58px;
+    }
+}
