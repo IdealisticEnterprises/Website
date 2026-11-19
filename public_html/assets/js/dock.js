@@ -177,6 +177,85 @@
     place(saved);
   });
 
+  // Phones: an iPhone-style paged Dock, 4 apps per page, with page dots
+  const track = dock.querySelector('.dock-track');
+  const dots = dock.querySelector('.dock-pages');
+  const PER_PAGE = 4;
+
+  function currentPage() {
+    return track ? Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)) : 0;
+  }
+
+  function updateDots() {
+    const page = currentPage();
+    Array.prototype.forEach.call(dots.children, function (dot, index) {
+      dot.setAttribute('aria-current', String(index === page));
+    });
+  }
+
+  function buildPages() {
+    if (!track || !dots) {
+      return;
+    }
+    track.querySelectorAll('.dock-spacer').forEach(function (spacer) {
+      spacer.remove();
+    });
+    dots.textContent = '';
+
+    if (!narrow.matches) {
+      dots.hidden = true;
+      return;
+    }
+    const apps = items.filter(function (item) {
+      return item.hasAttribute('data-app');
+    });
+    const pages = Math.ceil(apps.length / PER_PAGE);
+    const last = apps[apps.length - 1];
+
+    // Fill the last page, so every page snaps to a clean set of 4
+    for (let i = apps.length; i < pages * PER_PAGE; i++) {
+      const spacer = document.createElement('span');
+      spacer.className = 'dock-spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      last.after(spacer);
+    }
+    for (let page = 0; page < pages; page++) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.setAttribute('aria-label', 'Apps, page ' + (page + 1) + ' of ' + pages);
+      dot.addEventListener('click', function () {
+        track.scrollTo({left: page * track.clientWidth, behavior: reduceMotion.matches ? 'auto' : 'smooth'});
+      });
+      dots.appendChild(dot);
+    }
+    dots.hidden = pages < 2;
+
+    // Start on the page that holds the app that is open
+    const current = dock.querySelector('.dock-item[aria-current="page"]');
+    const index = current ? apps.indexOf(current) : -1;
+    track.scrollLeft = index >= 0 ? Math.floor(index / PER_PAGE) * track.clientWidth : 0;
+    updateDots();
+  }
+
+  if (track && dots) {
+    let pageFrame = null;
+    track.addEventListener('scroll', function () {
+      if (pageFrame === null) {
+        pageFrame = requestAnimationFrame(function () {
+          pageFrame = null;
+          updateDots();
+        });
+      }
+    }, {passive: true});
+    narrow.addEventListener('change', buildPages);
+    window.addEventListener('resize', function () {
+      if (narrow.matches) {
+        updateDots();
+      }
+    });
+    buildPages();
+  }
+
   // macOS Dock magnification: with a mouse, icons grow towards the pointer
   function apply() {
     frame = null;

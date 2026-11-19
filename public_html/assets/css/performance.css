@@ -75,3 +75,11 @@ html {
 #nav.nav {
     contain: layout style;
 }
+
+/* Phone Dock: one small glass element, so it keeps its blur */
+@media (max-width: 820px) {
+    .dock {
+        -webkit-backdrop-filter: blur(18px) saturate(170%);
+        backdrop-filter: blur(18px) saturate(170%);
+    }
+}

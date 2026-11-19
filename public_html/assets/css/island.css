@@ -9,7 +9,7 @@
     --island-glass: rgba(255, 255, 255, 0.025);
     --island-glass-strong: rgba(255, 255, 255, 0.045);
     --island-edge: rgba(255, 255, 255, 0.16);
-    --island-full: min(1100px, calc(100% - 32px));
+    --island-full: min(1180px, calc(100% - 24px));
     --island-compact: min(380px, calc(100% - 32px));
 }
 
@@ -78,7 +78,7 @@
 /* Compact pill once the page is scrolled */
 #nav.nav.is-compact {
     width: var(--island-compact);
-    padding: 6px 6px 6px 18px;
+    padding: 9px 9px 9px 18px;
 }
 
 #nav.nav.is-compact .button.small {
@@ -91,7 +91,7 @@
     }
 
     #nav.nav.is-compact {
-        padding: 6px 6px 6px 16px;
+        padding: 7px 7px 7px 16px;
     }
 }
 

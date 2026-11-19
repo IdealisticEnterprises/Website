@@ -258,3 +258,64 @@ html[data-theme="light"] .compose-to {
         width: 58px;
     }
 }
+
+/* ---------- Send lives in the writing area: bottom-right, solid, with the status beside it ---------- */
+.compose-write {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.compose-write .compose-body {
+    padding-bottom: 72px;
+}
+
+.compose-actions {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.compose-actions .compose-send {
+    margin: 0;
+    background: #2563eb;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+}
+
+/* Status: same nearly solid background as the hover notices */
+.compose-actions .contact-status {
+    padding: 7px 11px;
+    border: 1px solid var(--line);
+    background: rgba(20, 22, 28, 0.93);
+    color: #c9d1dd;
+    font-size: 0.85rem;
+}
+
+.compose-actions .contact-status:empty {
+    display: none;
+}
+
+html[data-theme="light"] .compose-actions .contact-status {
+    background: rgba(240, 244, 250, 0.93);
+    color: var(--muted);
+}
+
+.compose-actions .contact-status.is-ok {
+    color: #22c55e;
+}
+
+.compose-actions .contact-status.is-error {
+    color: #f87171;
+}
+
+html[data-theme="light"] .compose-actions .contact-status.is-ok {
+    color: #15803d;
+}
+
+html[data-theme="light"] .compose-actions .contact-status.is-error {
+    color: #dc2626;
+}

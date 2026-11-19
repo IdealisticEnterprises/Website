@@ -1,7 +1,10 @@
-/* Preview (preview.js): pages and links open in a panel shaped like the Dynamic Island, floating over the page.
-   The page behind is blurred, not darkened. Pages of this site load as an iframe; external sites that refuse
-   being framed show as a single message-like bubble. The round arrow leads to the app the link belongs to.
-   No animations: everything appears instantly. */
+/* Panel (preview.js): the island and the panel are ONE shape. Opening an app grows the island downwards to
+   host it (pages of this site as an iframe, external sites that refuse framing as a message bubble); closing
+   shrinks it back into the island. The island and the open panel have the same width at every screen size.
+   The page behind is blurred, not darkened.
+
+   Smoothness: only the shell's height animates. The content inside already has its final size (set by
+   preview.js in --body-h), so nothing inside is laid out again on each frame. */
 
 .preview[hidden] {
     display: none;
@@ -13,6 +16,10 @@
     z-index: 100;
 }
 
+.preview:not(.is-open) {
+    pointer-events: none;
+}
+
 /* Blur, not darken */
 .preview-backdrop {
     position: absolute;
@@ -20,71 +27,87 @@
     background: rgba(6, 7, 10, 0.12);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     backdrop-filter: blur(18px) saturate(140%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-/* The island-shaped panel */
+.preview.is-open .preview-backdrop {
+    opacity: 1;
+}
+
+/* The shell: starts exactly where the island is, with the island's size, and grows downwards */
 .preview-sheet {
     position: absolute;
-    top: calc(16px + env(safe-area-inset-top, 0px));
+    top: var(--island-top, 16px);
     left: 50%;
-    display: flex;
-    flex-direction: column;
-    width: min(520px, calc(100% - 24px));
+    width: var(--island-full);
+    height: var(--island-h, 60px);
     margin: 0;
     padding: 0;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 30px !important;
-    background: rgba(14, 16, 22, 0.86);
+    background: rgba(14, 16, 22, 0.9);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
         0 24px 70px rgba(0, 0, 0, 0.5);
     transform: translateX(-50%);
+    transition: height 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    contain: strict;
 }
 
-/* Pages get nearly the whole screen, still island-shaped */
-.preview.is-page .preview-sheet {
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    width: min(1180px, calc(100% - 24px));
+.preview.is-open .preview-sheet {
+    height: var(--open-h, 70vh);
 }
 
+.preview-sheet:focus {
+    outline: none;
+}
+
+/* The island's own row (brand + theme button) sits on top of the shell; this keeps its place */
+.preview-island-space {
+    height: calc(var(--island-h, 60px) - 2px);
+}
+
+/* Bar: ✕ on the left, title and address */
 .preview-bar {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 8px 8px 8px;
-}
-
-.preview.is-page .preview-bar {
+    height: 52px;
+    padding: 0 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.preview-close,
-.preview-go {
+.preview-bar,
+.preview-body {
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+
+.preview.is-open .preview-bar,
+.preview.is-open .preview-body {
+    opacity: 1;
+    transition: opacity 0.3s ease 0.12s;
+}
+
+.preview-close {
     display: grid;
     place-items: center;
     flex: none;
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 50% !important;
     background: rgba(255, 255, 255, 0.07);
     color: #f5f7fb;
     cursor: pointer;
-}
-
-.preview-go {
-    border-color: transparent;
-    background: #3b82f6;
-}
-
-.preview-go[hidden] {
-    display: none;
+    transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .preview-close svg,
-.preview-go svg,
 .preview-card-go svg {
     width: 18px;
     height: 18px;
@@ -119,9 +142,42 @@
     white-space: nowrap;
 }
 
+/* The ✕ moves to the right while the pointer is in the bar's top-right corner */
+.preview-corner {
+    display: flex;
+    justify-content: flex-end;
+    flex: none;
+    width: 160px;
+    margin-left: -160px;
+}
+
+.preview-close-right {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.6);
+}
+
+.preview-bar:has(.preview-corner:hover) .preview-close-right {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+}
+
+.preview-bar:has(.preview-corner:hover) .preview-close-left {
+    opacity: 0;
+    transform: scale(0.6);
+}
+
+@media (hover: none) {
+    .preview-corner {
+        display: none;
+    }
+}
+
+/* Content: fixed at its final size, so growing the shell never re-lays it out */
 .preview-body {
     position: relative;
-    flex: 1;
+    height: var(--body-h, auto);
     overflow: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -131,7 +187,7 @@
     width: 100%;
     height: 100%;
     border: 0;
-    background: #06070a;
+    background: transparent;
 }
 
 /* External site that refuses being framed: one message bubble that leads to the app */
@@ -139,8 +195,8 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin: 0 8px 8px 8px;
-    padding: 12px 12px 12px 12px;
+    margin: 10px;
+    padding: 12px;
     border-radius: 22px !important;
     background: rgba(255, 255, 255, 0.06);
     color: #f5f7fb;
@@ -192,40 +248,76 @@
     color: #f5f7fb;
 }
 
-/* The page behind does not scroll while the panel is open */
+/* ---------- The island while it hosts an app: same width as the shell, its own glass hidden ---------- */
+#nav.nav {
+    z-index: 101;
+}
+
+html.island-hosting #nav.nav,
+html.island-hosting #nav.nav.is-compact {
+    width: var(--island-full);
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+html.island-hosting #nav.nav::before {
+    opacity: 0;
+}
+
+/* The Dock stays above the blur on every screen (apps can be switched while one is open) */
+body > .dock {
+    z-index: 101;
+}
+
+/* The page behind does not scroll while an app is open */
 html.preview-locked,
 html.preview-locked body {
     overflow: hidden;
 }
 
-/* Phones: the same island, edge to edge with small margins */
+/* Phones: the bar is also a handle to drag the island back up closed (drag down to dismiss) */
 @media (max-width: 640px) {
-    .preview-sheet {
-        top: calc(10px + env(safe-area-inset-top, 0px));
-        width: calc(100% - 16px);
-        border-radius: 28px !important;
-    }
-
-    .preview.is-page .preview-sheet {
-        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-        width: calc(100% - 16px);
+    .preview-bar {
+        touch-action: none;
     }
 }
 
-/* Browsers without backdrop blur: a light tint instead */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
     .preview-backdrop {
         background: rgba(6, 7, 10, 0.55);
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .preview-backdrop,
+    .preview-sheet,
+    .preview-bar,
+    .preview-body,
+    .preview-close {
+        transition-duration: 0.01s !important;
+        transition-delay: 0s !important;
+    }
+}
+
 /* ---------- A page shown inside the panel (prefs.js adds html.embedded) ---------- */
-/* The panel has its own bar, so the page drops its island, Dock, menu and footer */
+/* The panel has its own bar, so the page drops its island, Dock, menu and footer, and is transparent */
 html.embedded #nav,
 html.embedded .dock,
 html.embedded .menu-backdrop,
 html.embedded .footer {
     display: none !important;
+}
+
+html.embedded,
+html.embedded body {
+    background: transparent !important;
+}
+
+html.embedded body::before {
+    display: none;
 }
 
 html.embedded body {
@@ -238,192 +330,156 @@ html.embedded .legal-head {
     padding-top: 28px;
 }
 
-/* ---------- Wide screens: the Dock stays usable above the blur, so apps can be switched while one is open ---------- */
-@media (min-width: 821px) {
-    html.preview-locked body > .dock {
-        z-index: 101;
-    }
-
-    .preview.is-page .preview-sheet {
-        bottom: calc(var(--dock-size) + 2 * var(--dock-pad) + 30px + env(safe-area-inset-bottom, 0px));
-    }
-
-    /* Dock at the top: the island (holding the Dock) stays above, and the panel opens below it */
-    html[data-dock="top"].preview-locked #nav.nav {
-        z-index: 101;
-    }
-
-    html[data-dock="top"] .preview-sheet {
-        top: calc(96px + env(safe-area-inset-top, 0px));
-    }
-
-    html[data-dock="top"] .preview.is-page .preview-sheet {
-        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    }
+/* Real app icon in a bubble: the local brand glyph, painted white */
+.preview-logo {
+    width: 26px;
+    height: 26px;
+    background: #ffffff;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
 }
 
-
-/* ---------- Open / close (preview.js toggles .is-open) ---------- */
-
-.preview-backdrop {
-    opacity: 0;
-    transition: opacity 0.3s ease;
+/* ---------- The bar lives in the island's row: no second row, the app starts right under the island ---------- */
+.preview-bar {
+    position: absolute;
+    top: 0;
+    left: var(--bar-left, 180px);
+    right: var(--bar-right, 70px);
+    z-index: 2;
+    height: calc(var(--island-h, 60px) - 2px);
+    padding: 0;
+    border: 0;
 }
 
-.preview.is-open .preview-backdrop {
-    opacity: 1;
+.preview-island-space {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Wide screens: grows out of the island area at the top */
-.preview-sheet {
-    opacity: 0;
-    transform-origin: 50% 0;
-    transform: translateX(-50%) translateY(-12px) scale(0.94);
-    transition:
-        transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
-        opacity 0.22s ease;
-    will-change: transform;
+html[data-theme="light"] .preview-island-space {
+    border-bottom-color: rgba(30, 45, 75, 0.1);
 }
 
-.preview.is-open .preview-sheet {
-    opacity: 1;
-    transform: translateX(-50%);
+/* While hosting, the island lets clicks through its empty middle (to the ✕ and title); its own buttons still work */
+html.island-hosting #nav.nav {
+    pointer-events: none;
 }
 
-/* Phones: slides up from the bottom, and back down when closed or dragged away */
-@media (max-width: 640px) {
-    .preview-sheet,
-    .preview.is-page .preview-sheet {
-        opacity: 1;
-        transform: translateX(-50%) translateY(110vh);
-        transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
-    }
+html.island-hosting #nav .brand,
+html.island-hosting #nav .theme-toggle,
+html.island-hosting #nav .dock {
+    pointer-events: auto;
+}
 
-    .preview.is-open .preview-sheet {
-        transform: translateX(-50%);
-    }
-
-    /* The bar is the handle: it takes the drag instead of scrolling the page */
+/* Narrow phones: tighter title so it fits between the brand and the theme button */
+@media (max-width: 440px) {
     .preview-bar {
-        position: relative;
-        padding-top: 16px;
+        gap: 8px;
+    }
+
+    .preview-close {
+        width: 32px;
+        height: 32px;
+    }
+
+    .preview-where strong {
+        font-size: 0.85rem;
+    }
+
+    .preview-host {
+        font-size: 0.72rem;
+    }
+}
+
+/* ---------- Phones and portrait tablets: slide to close ---------- */
+.preview-grab,
+.preview-hint {
+    display: none;
+}
+
+@media (max-width: 820px) {
+    /* The Dock leaves while an app is open, so the app uses the full height */
+    body > .dock {
+        transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+    }
+
+    html.preview-locked body > .dock {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-50%) translateY(calc(100% + 40px));
+    }
+
+    /* Grab handle at the very top of the island: drag from here (or the title) in any direction */
+    .preview-grab {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 3;
+        display: flex;
+        justify-content: center;
+        height: 16px;
+        padding-top: 5px;
         touch-action: none;
         cursor: grab;
     }
 
-    .preview-bar::before {
-        content: '';
+    .preview-grab span {
+        width: 38px;
+        height: 4px;
+        border-radius: 2px !important;
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    html[data-theme="light"] .preview-grab span {
+        background: rgba(15, 20, 30, 0.25);
+    }
+
+    .preview-bar {
+        touch-action: none;
+    }
+
+    /* The hint: shown under the island the first few times, then it fades away */
+    .preview-hint {
         position: absolute;
-        top: 6px;
+        top: calc(var(--island-h, 60px) + 10px);
         left: 50%;
-        width: 36px;
-        height: 5px;
-        border-radius: 3px !important;
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateX(-50%);
+        z-index: 3;
+        display: block;
+        padding: 7px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(20, 22, 28, 0.93);
+        color: #e6e9ef;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -4px);
+        transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .preview.show-hint.is-open .preview-hint {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+
+    html[data-theme="light"] .preview-hint {
+        border-color: rgba(30, 45, 75, 0.1);
+        background: rgba(240, 244, 250, 0.93);
+        color: var(--ink);
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .preview-backdrop,
-    .preview-sheet,
-    .preview.is-page .preview-sheet {
-        transition-duration: 0.01s !important;
-    }
-}
-
-/* Pages in the panel are transparent: the panel's own theme-coloured glass is their background */
-html.embedded,
-html.embedded body {
-    background: transparent !important;
-}
-
-html.embedded body::before {
-    display: none;
-}
-
-.preview-body iframe,
-html[data-theme="light"] .preview-body iframe {
-    background: transparent;
-}
-
-/* ---------- Close button: on the left; it moves to the right when the pointer goes to the top-right corner ---------- */
-.preview-sheet:focus {
-    outline: none;
-}
-
-/* An invisible corner zone at the right end of the bar holds the right-hand ✕ */
-.preview-corner {
-    display: flex;
-    justify-content: flex-end;
-    flex: none;
-    width: 160px;
-    margin-left: -160px;
-}
-
-.preview-close {
-    transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.preview-close-right {
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.6);
-}
-
-.preview-bar:has(.preview-corner:hover) .preview-close-right {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-}
-
-.preview-bar:has(.preview-corner:hover) .preview-close-left {
-    opacity: 0;
-    transform: scale(0.6);
-}
-
-/* Touch screens cannot hover: the ✕ simply stays on the left */
-@media (hover: none) {
-    .preview-corner {
-        display: none;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .preview-close {
-        transition-duration: 0.01s;
-    }
-}
-
-
-/* The island (brand + theme button) stays usable above the blur; the panel opens just below it */
-html.preview-locked #nav.nav {
-    z-index: 101;
-}
-
-.preview-sheet {
-    top: calc(92px + env(safe-area-inset-top, 0px));
-}
-
-@media (max-width: 640px) {
-    .preview-sheet,
-    .preview.is-page .preview-sheet {
-        top: calc(82px + env(safe-area-inset-top, 0px));
-    }
-}
-
-/* The Dock and the island are always above the panel layer, so opening or closing an app never moves the
-   pointer "out" of the Dock (which flattened the magnified icons). While the panel fades out, it ignores the mouse. */
-@media (min-width: 821px) {
-    body > .dock {
-        z-index: 101;
-    }
+/* A shortened island widening (before hosting) and narrowing back (after): same smooth curve both ways */
+html.island-widening #nav.nav,
+html.island-widening #nav.nav.is-compact {
+    width: var(--island-full);
 }
 
 #nav.nav {
-    z-index: 101;
-}
-
-.preview:not(.is-open) {
-    pointer-events: none;
+    transition:
+        width 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+        padding 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+        background 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
 }

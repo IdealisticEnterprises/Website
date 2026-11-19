@@ -10,16 +10,16 @@
 
   // Keyed by the last path part of a short link (/whatsapp, idealistic.chat/whatsapp) or by host
   const SERVICES = {
-    ios: {name: 'App Store', host: 'apps.apple.com', text: 'iDEALISTIC® for iPhone and iPad.', tile: 'linear-gradient(180deg, #6cc6ff, #1677ff)', glyph: 'A'},
+    ios: {name: 'App Store', host: 'apps.apple.com', text: 'iDEALISTIC® for iPhone and iPad.', logo: 'appstore', tile: 'linear-gradient(180deg, #6cc6ff, #1677ff)', glyph: 'A'},
     ipados: 'ios',
-    android: {name: 'Google Play', host: 'play.google.com', text: 'iDEALISTIC® for Android phones and tablets.', tile: 'linear-gradient(180deg, #6ef08a, #1fb84b)', glyph: '▶'},
-    whatsapp: {name: 'WhatsApp', host: 'wa.me', text: 'Use iDEALISTIC® in WhatsApp.', tile: 'linear-gradient(180deg, #5ef08c, #19b34a)', glyph: 'W'},
-    telegram: {name: 'Telegram', host: 't.me', text: 'Use iDEALISTIC® in Telegram.', tile: 'linear-gradient(180deg, #6fd0ff, #229ed9)', glyph: 'T'},
-    messenger: {name: 'Messenger', host: 'facebook.com', text: 'Use iDEALISTIC® in Messenger.', tile: 'linear-gradient(180deg, #8f8cff, #0a7cff)', glyph: 'M'},
+    android: {name: 'Google Play', host: 'play.google.com', text: 'iDEALISTIC® for Android phones and tablets.', logo: 'googleplay', tile: 'linear-gradient(180deg, #6ef08a, #1fb84b)', glyph: '▶'},
+    whatsapp: {name: 'WhatsApp', host: 'wa.me', text: 'Use iDEALISTIC® in WhatsApp.', logo: 'whatsapp', tile: 'linear-gradient(180deg, #5ef08c, #19b34a)', glyph: 'W'},
+    telegram: {name: 'Telegram', host: 't.me', text: 'Use iDEALISTIC® in Telegram.', logo: 'telegram', tile: 'linear-gradient(180deg, #6fd0ff, #229ed9)', glyph: 'T'},
+    messenger: {name: 'Messenger', host: 'facebook.com', text: 'Use iDEALISTIC® in Messenger.', logo: 'messenger', tile: 'linear-gradient(180deg, #8f8cff, #0a7cff)', glyph: 'M'},
     facebook: 'messenger',
-    instagram: {name: 'Instagram', host: 'instagram.com', text: 'Use iDEALISTIC® in Instagram messages.', tile: 'linear-gradient(180deg, #ffb36b, #e1306c 55%, #8a3ab9)', glyph: 'I'},
-    discord: {name: 'Discord', host: 'discord.com', text: 'Use iDEALISTIC® in Discord.', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
-    x: {name: 'X', host: 'x.com', text: 'Use iDEALISTIC® on X.', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'X'},
+    instagram: {name: 'Instagram', host: 'instagram.com', text: 'Use iDEALISTIC® in Instagram messages.', logo: 'instagram', tile: 'linear-gradient(180deg, #ffb36b, #e1306c 55%, #8a3ab9)', glyph: 'I'},
+    discord: {name: 'Discord', host: 'discord.com', text: 'Use iDEALISTIC® in Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
+    x: {name: 'X', host: 'x.com', text: 'Use iDEALISTIC® on X.', logo: 'x', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'X'},
     twitter: 'x',
     github: {name: 'GitHub', host: 'github.com', text: 'IdealisticEnterprises on GitHub.', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'G'},
     'spartan.top': {name: 'Spartan AntiCheat', host: 'spartan.top', text: 'Another product by Idealistic OÜ.', tile: 'linear-gradient(180deg, #ff8a6b, #d9381e)', glyph: 'S'},
@@ -139,6 +139,9 @@
     sheet.innerHTML =
       '<div class="preview-backdrop" data-close></div>' +
       '<section class="preview-sheet" role="dialog" aria-modal="true" aria-labelledby="preview-title">' +
+      '  <div class="preview-grab" aria-hidden="true"><span></span></div>' +
+      '  <div class="preview-island-space"></div>' +
+      '  <div class="preview-hint" aria-hidden="true">Slide in any direction to close</div>' +
       '  <header class="preview-bar">' +
       '    <button class="preview-close preview-close-left" type="button" data-close aria-label="Close">' + CROSS + '</button>' +
       '    <div class="preview-where"><strong id="preview-title"></strong><span class="preview-host"></span></div>' +
@@ -162,9 +165,88 @@
   const phone = window.matchMedia('(max-width: 640px)');
   let isOpen = false;
   let hideTimer = null;
+  let widenTimer = null;
 
   // Only transform and opacity animate (graphics chip only), so it stays smooth on slow machines
-  function setOpen(open) {
+  // The shell starts where the island is, with its size, and grows to host the app (and back again)
+  function measure() {
+    const nav = document.getElementById('nav');
+    const panel = sheet.querySelector('.preview-sheet');
+    const body = sheet.querySelector('.preview-body');
+    const bar = sheet.querySelector('.preview-bar');
+    const box = nav.getBoundingClientRect();
+    const islandH = nav.offsetHeight;
+    const dock = document.querySelector('body > .dock');
+    // Wide screens with the Dock at the bottom: stop above it (on phones the Dock element is the hidden menu list)
+    // Stop above the Dock when it is at the bottom (always on phones, unless moved to the top on wide screens)
+    const narrowScreen = window.matchMedia('(max-width: 820px)').matches;
+    // Wide screens with the Dock at the bottom: stop above it. Phones: the Dock leaves, so use the full height.
+    const dockBox = dock && !narrowScreen && !document.documentElement.hasAttribute('data-dock')
+      ? dock.getBoundingClientRect() : null;
+    const bottomEdge = dockBox ? dockBox.top - 14 : window.innerHeight - 16;
+    let openH;
+
+    if (sheet.classList.contains('is-page')) {
+      openH = bottomEdge - box.top;
+    } else {
+      const card = body.firstElementChild;
+      openH = islandH + (card ? card.offsetHeight + 20 : 0);
+    }
+
+    // The bar (✕, title, address) sits in the island's own row: between the brand and the theme button
+    // (or the Dock, when it is in the island). Measured from layout sizes, so the island's width animation
+    // does not matter.
+    const style = getComputedStyle(nav);
+    const brand = nav.querySelector('.brand');
+    const toggle = nav.querySelector('.theme-toggle');
+    const innerDock = nav.querySelector('.dock');
+    const shellW = panel.getBoundingClientRect().width;
+    const barLeft = parseFloat(style.paddingLeft) + (brand ? brand.offsetWidth : 0) + 16;
+    let barRight = parseFloat(style.paddingRight) + (toggle ? toggle.offsetWidth : 0) + 12;
+
+    if (innerDock) {
+      barRight = Math.max(barRight, shellW / 2 + innerDock.offsetWidth / 2 + 12);
+    }
+    panel.style.setProperty('--island-top', box.top + 'px');
+    panel.style.setProperty('--island-h', islandH + 'px');
+    panel.style.setProperty('--bar-left', barLeft + 'px');
+    panel.style.setProperty('--bar-right', barRight + 'px');
+    panel.style.setProperty('--open-h', Math.max(openH, islandH + 120) + 'px');
+    panel.style.setProperty('--body-h', Math.max(openH - islandH, 60) + 'px');
+  }
+
+  function showHint() {
+    if (!touchScreen.matches) {
+      return;
+    }
+    let seen = 0;
+
+    try {
+      seen = parseInt(localStorage.getItem('slide-hint') || '0', 10);
+    } catch (error) {
+      seen = 0;
+    }
+    if (seen >= 3) {
+      return;
+    }
+    try {
+      localStorage.setItem('slide-hint', String(seen + 1));
+    } catch (error) {
+      // fine
+    }
+    sheet.classList.add('show-hint');
+    setTimeout(function () {
+      sheet.classList.remove('show-hint');
+    }, 2800);
+  }
+
+  window.addEventListener('resize', function () {
+    if (isOpen) {
+      measure();
+    }
+  });
+
+  function setOpen(open, instant) {
     clearTimeout(hideTimer);
     const panel = sheet.querySelector('.preview-sheet');
     panel.style.transition = '';
@@ -172,20 +254,45 @@
     sheet.querySelector('.preview-backdrop').style.opacity = '';
 
     if (open) {
-      sheet.hidden = false;
-      // Start from the closed position, then move to open on the next frame
-      void panel.offsetWidth;
-      requestAnimationFrame(function () {
-        sheet.classList.add('is-open');
-      });
+      const root = document.documentElement;
+      const nav = document.getElementById('nav');
+      const grow = function () {
+        if (!isOpen) {
+          return;
+        }
+        // The island takes the shell's width and lends it its row; the shell appears at the island's size
+        root.classList.add('island-hosting');
+        root.classList.remove('island-widening');
+        sheet.hidden = false;
+        measure();
+        void panel.offsetWidth;
+        requestAnimationFrame(function () {
+          sheet.classList.add('is-open');
+        });
+        showHint();
+      };
+
+      // A shortened island first widens to full length (keeping its glass), then grows down into the app
+      if (nav && nav.classList.contains('is-compact') && !reduceMotion.matches
+        && !root.classList.contains('island-hosting')) {
+        root.classList.add('island-widening');
+        clearTimeout(widenTimer);
+        widenTimer = setTimeout(grow, 380);
+      } else {
+        grow();
+      }
     } else {
+      clearTimeout(widenTimer);
       sheet.classList.remove('is-open');
       hideTimer = setTimeout(function () {
         sheet.hidden = true;
         sheet.querySelector('.preview-body').textContent = '';
-      }, reduceMotion.matches ? 0 : 420);
+        // Back to just the island: it shows its own glass again, then (when shortened) narrows back
+        document.documentElement.classList.remove('island-hosting', 'island-widening');
+      }, reduceMotion.matches || instant ? 0 : 500);
     }
   }
+
 
   function show(barUrl, replace) {
     lastFocus = lastFocus || document.activeElement;
@@ -193,6 +300,8 @@
     if (!isOpen) {
       isOpen = true;
       setOpen(true);
+    } else {
+      measure();
     }
     document.documentElement.classList.add('preview-locked');
     const panel = sheet.querySelector('.preview-sheet');
@@ -305,8 +414,17 @@
         '<span class="preview-tile" aria-hidden="true"></span>' +
         '<span class="preview-card-text"><strong></strong><span class="preview-text"></span></span>' +
         '<span class="preview-card-go" aria-hidden="true">' + ARROW + '</span>';
-      card.querySelector('.preview-tile').style.background = info.tile;
-      card.querySelector('.preview-tile').textContent = info.glyph;
+      const tile = card.querySelector('.preview-tile');
+      tile.style.background = info.tile;
+
+      if (info.logo) {
+        const glyph = document.createElement('span');
+        glyph.className = 'preview-logo';
+        glyph.style.setProperty('--logo', 'url(/assets/img/brands/' + info.logo + '.svg)');
+        tile.appendChild(glyph);
+      } else {
+        tile.textContent = info.glyph;
+      }
       card.querySelector('strong').textContent = info.name;
       card.querySelector('.preview-text').textContent = info.text;
       body.appendChild(card);
@@ -314,12 +432,12 @@
     show(null, false);
   }
 
-  function close(fromHistory) {
+  function close(fromHistory, instant) {
     if (!sheet || !isOpen) {
       return;
     }
     isOpen = false;
-    setOpen(false);
+    setOpen(false, instant);
     markDock(null);
     document.documentElement.classList.remove('preview-locked');
 
@@ -337,59 +455,87 @@
     }
   }
 
-  // Phones: drag the panel down by its bar to dismiss it, like an iPhone sheet
+  // Phones and portrait tablets: grab the top of the island and slide it in any direction to close it.
+  // The whole island (its row and the app) follows the finger; let go far enough, or flick, and it flies off
+  // that way. Otherwise it springs back.
+  const touchScreen = window.matchMedia('(max-width: 820px)');
+
   function enableDrag() {
     const panel = sheet.querySelector('.preview-sheet');
-    const bar = sheet.querySelector('.preview-bar');
     const backdrop = sheet.querySelector('.preview-backdrop');
-    let startY = 0;
-    let dy = 0;
+    const nav = document.getElementById('nav');
+    const zones = [sheet.querySelector('.preview-grab'), sheet.querySelector('.preview-bar')];
+    let start = null;
+    let delta = {x: 0, y: 0};
     let dragging = false;
-    let tracking = false;
     let samples = [];
+    let zone = null;
 
-    bar.addEventListener('pointerdown', function (event) {
-      if (!phone.matches || !isOpen || (event.pointerType === 'mouse' && event.button !== 0)) {
+    function place(x, y) {
+      const move = ' translate(' + x + 'px, ' + y + 'px)';
+      panel.style.transform = 'translateX(-50%)' + move;
+      nav.style.transform = 'translateX(-50%)' + move;
+      backdrop.style.opacity = String(Math.max(0, 1 - Math.hypot(x, y) / 500));
+    }
+
+    function reset(animated) {
+      const ease = animated ? 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)' : 'none';
+      panel.style.transition = ease;
+      nav.style.transition = ease;
+      backdrop.style.transition = animated ? 'opacity 0.3s ease' : 'none';
+      panel.style.transform = '';
+      nav.style.transform = '';
+      backdrop.style.opacity = '';
+      setTimeout(function () {
+        panel.style.transition = '';
+        nav.style.transition = '';
+        backdrop.style.transition = '';
+      }, animated ? 360 : 0);
+    }
+
+    function down(event) {
+      if (!touchScreen.matches || !isOpen || (event.pointerType === 'mouse' && event.button !== 0)) {
         return;
       }
-      tracking = true;
+      zone = event.currentTarget;
+      start = {x: event.clientX, y: event.clientY};
+      delta = {x: 0, y: 0};
       dragging = false;
-      startY = event.clientY;
-      dy = 0;
-      samples = [{y: event.clientY, t: event.timeStamp}];
-    });
+      samples = [{x: event.clientX, y: event.clientY, t: event.timeStamp}];
+    }
 
-    bar.addEventListener('pointermove', function (event) {
-      if (!tracking) {
+    function move(event) {
+      if (!start || event.currentTarget !== zone) {
         return;
       }
-      const raw = event.clientY - startY;
+      const x = event.clientX - start.x;
+      const y = event.clientY - start.y;
 
       if (!dragging) {
-        if (Math.abs(raw) < 6) {
+        if (Math.hypot(x, y) < 8) {
           return;
         }
         dragging = true;
-        bar.setPointerCapture(event.pointerId);
+        zone.setPointerCapture(event.pointerId);
         panel.style.transition = 'none';
+        nav.style.transition = 'none';
         backdrop.style.transition = 'none';
+        sheet.classList.add('was-dragged');
       }
-      // Downwards follows the finger; upwards resists, like iOS
-      dy = raw > 0 ? raw : -Math.sqrt(-raw) * 2;
-      panel.style.transform = 'translateX(-50%) translateY(' + dy + 'px)';
-      backdrop.style.opacity = String(Math.max(0, 1 - dy / (panel.offsetHeight || 600)));
-      samples.push({y: event.clientY, t: event.timeStamp});
+      delta = {x: x, y: y};
+      place(x, y);
+      samples.push({x: event.clientX, y: event.clientY, t: event.timeStamp});
 
       if (samples.length > 5) {
         samples.shift();
       }
-    });
+    }
 
-    function release(event) {
-      if (!tracking) {
+    function up(event) {
+      if (!start) {
         return;
       }
-      tracking = false;
+      start = null;
 
       if (!dragging) {
         return;
@@ -397,37 +543,65 @@
       dragging = false;
       const first = samples[0];
       const last = samples[samples.length - 1];
-      const velocity = last && first && last.t > first.t ? (last.y - first.y) / (last.t - first.t) : 0;
-      panel.style.transition = '';
-      backdrop.style.transition = '';
+      const time = last.t - first.t || 1;
+      const speed = Math.hypot(last.x - first.x, last.y - first.y) / time;
+      const distance = Math.hypot(delta.x, delta.y);
 
-      if (dy > 120 || velocity > 0.5) {
-        // Continue the slide from where the finger let go
-        panel.style.transform = '';
-        backdrop.style.opacity = '';
-        close();
-      } else {
-        // Not far enough: spring back up
-        panel.style.transform = '';
-        backdrop.style.opacity = '';
-      }
       // A drag that started on a button is not a tap on it
-      if (event && event.type === 'pointerup') {
+      if (event.type === 'pointerup') {
         const swallow = function (clickEvent) {
           clickEvent.stopPropagation();
           clickEvent.preventDefault();
         };
-        bar.addEventListener('click', swallow, true);
-        // Only the click that ends this drag is swallowed, never a later tap
+        zone.addEventListener('click', swallow, true);
         setTimeout(function () {
-          bar.removeEventListener('click', swallow, true);
+          zone.removeEventListener('click', swallow, true);
         }, 0);
+      }
+
+      if (distance > 110 || speed > 0.5) {
+        // Fly off in the direction it was slid
+        const angle = Math.atan2(delta.y || 0.001, delta.x);
+        const far = Math.max(window.innerWidth, window.innerHeight) * 1.2;
+        const ease = 'transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 0.32s ease';
+        panel.style.transition = ease;
+        nav.style.transition = ease;
+        backdrop.style.transition = 'opacity 0.3s ease';
+        place(Math.cos(angle) * far, Math.sin(angle) * far);
+        panel.style.opacity = '0';
+        nav.style.opacity = '0';
+        setTimeout(function () {
+          close(false, true);
+          // The island comes back in its place
+          panel.style.transition = 'none';
+          nav.style.transition = 'none';
+          panel.style.transform = '';
+          nav.style.transform = '';
+          panel.style.opacity = '';
+          void nav.offsetWidth;
+          nav.style.transition = 'opacity 0.3s ease';
+          nav.style.opacity = '';
+          setTimeout(function () {
+            panel.style.transition = '';
+            nav.style.transition = '';
+          }, 320);
+        }, 320);
+      } else {
+        reset(true);
       }
     }
 
-    bar.addEventListener('pointerup', release);
-    bar.addEventListener('pointercancel', release);
+    zones.forEach(function (target) {
+      if (!target) {
+        return;
+      }
+      target.addEventListener('pointerdown', down);
+      target.addEventListener('pointermove', move);
+      target.addEventListener('pointerup', up);
+      target.addEventListener('pointercancel', up);
+    });
   }
+
 
 
   // Decide what a link does. Returns true when it was handled here.
