@@ -182,8 +182,25 @@
   const dots = dock.querySelector('.dock-pages');
   const PER_PAGE = 4;
 
+  function maxScroll() {
+    return track.scrollWidth - track.clientWidth;
+  }
+
+  // The last page always shows 4 apps (the last 4), so it counts as the last page once scrolled to the end
   function currentPage() {
-    return track ? Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)) : 0;
+    if (!track) {
+      return 0;
+    }
+    const pages = dots.children.length;
+
+    if (pages > 1 && track.scrollLeft >= maxScroll() - 2) {
+      return pages - 1;
+    }
+    return Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
+  }
+
+  function pageLeft(page) {
+    return Math.min(page * track.clientWidth, maxScroll());
   }
 
   function updateDots() {
@@ -210,21 +227,12 @@
       return item.hasAttribute('data-app');
     });
     const pages = Math.ceil(apps.length / PER_PAGE);
-    const last = apps[apps.length - 1];
-
-    // Fill the last page, so every page snaps to a clean set of 4
-    for (let i = apps.length; i < pages * PER_PAGE; i++) {
-      const spacer = document.createElement('span');
-      spacer.className = 'dock-spacer';
-      spacer.setAttribute('aria-hidden', 'true');
-      last.after(spacer);
-    }
     for (let page = 0; page < pages; page++) {
       const dot = document.createElement('button');
       dot.type = 'button';
       dot.setAttribute('aria-label', 'Apps, page ' + (page + 1) + ' of ' + pages);
       dot.addEventListener('click', function () {
-        track.scrollTo({left: page * track.clientWidth, behavior: reduceMotion.matches ? 'auto' : 'smooth'});
+        track.scrollTo({left: pageLeft(page), behavior: reduceMotion.matches ? 'auto' : 'smooth'});
       });
       dots.appendChild(dot);
     }
@@ -233,7 +241,7 @@
     // Start on the page that holds the app that is open
     const current = dock.querySelector('.dock-item[aria-current="page"]');
     const index = current ? apps.indexOf(current) : -1;
-    track.scrollLeft = index >= 0 ? Math.floor(index / PER_PAGE) * track.clientWidth : 0;
+    track.scrollLeft = index >= 0 ? pageLeft(Math.floor(index / PER_PAGE)) : 0;
     updateDots();
   }
 

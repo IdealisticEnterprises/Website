@@ -402,7 +402,8 @@ html.island-hosting #nav .dock {
         transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
     }
 
-    html.preview-locked body > .dock {
+    /* Only full pages make the Dock leave; with a small link bubble it stays where it is */
+    html.preview-locked.preview-page body > .dock {
         opacity: 0;
         pointer-events: none;
         transform: translateX(-50%) translateY(calc(100% + 40px));
@@ -482,4 +483,17 @@ html.island-widening #nav.nav.is-compact {
         background 0.3s ease,
         border-color 0.3s ease,
         box-shadow 0.3s ease;
+}
+
+/* Link bubbles and link-list pages cannot be slid away: no grab handle, and the bar scrolls/taps normally */
+@media (max-width: 820px) {
+    .preview:not(.is-page) .preview-grab,
+    .preview.no-slide .preview-grab {
+        display: none;
+    }
+
+    .preview:not(.is-page) .preview-bar,
+    .preview.no-slide .preview-bar {
+        touch-action: auto;
+    }
 }

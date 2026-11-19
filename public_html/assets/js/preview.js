@@ -21,7 +21,7 @@
     discord: {name: 'Discord', host: 'discord.com', text: 'Use iDEALISTIC® in Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
     x: {name: 'X', host: 'x.com', text: 'Use iDEALISTIC® on X.', logo: 'x', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'X'},
     twitter: 'x',
-    github: {name: 'GitHub', host: 'github.com', text: 'IdealisticEnterprises on GitHub.', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'G'},
+    github: {name: 'GitHub', host: 'github.com', text: 'IdealisticEnterprises on GitHub.', logo: 'github', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'G'},
     'spartan.top': {name: 'Spartan AntiCheat', host: 'spartan.top', text: 'Another product by Idealistic OÜ.', tile: 'linear-gradient(180deg, #ff8a6b, #d9381e)', glyph: 'S'},
     'ariregister.rik.ee': {name: 'Estonian Business Register', host: 'ariregister.rik.ee', text: 'The official company record of Idealistic OÜ.', tile: 'linear-gradient(180deg, #6cc6ff, #0b5cad)', glyph: 'E'},
     'euipo.europa.eu': {name: 'EU trademark', host: 'euipo.europa.eu', text: 'EU trademark no. 019353308 for iDEALISTIC®.', tile: 'linear-gradient(180deg, #6c8cff, #1a3a9e)', glyph: '®'}
@@ -143,11 +143,7 @@
       '  <div class="preview-island-space"></div>' +
       '  <div class="preview-hint" aria-hidden="true">Slide in any direction to close</div>' +
       '  <header class="preview-bar">' +
-      '    <button class="preview-close preview-close-left" type="button" data-close aria-label="Close">' + CROSS + '</button>' +
       '    <div class="preview-where"><strong id="preview-title"></strong><span class="preview-host"></span></div>' +
-      '    <div class="preview-corner">' +
-      '      <button class="preview-close preview-close-right" type="button" data-close tabindex="-1" aria-hidden="true">' + CROSS + '</button>' +
-      '    </div>' +
       '  </header>' +
       '  <div class="preview-body"></div>' +
       '</section>';
@@ -168,6 +164,28 @@
   let widenTimer = null;
 
   // Only transform and opacity animate (graphics chip only), so it stays smooth on slow machines
+  // Put the island and the shell back exactly as they were (no drag offsets, fully visible)
+  let openToken = 0;
+
+  function restoreIsland() {
+    const nav = document.getElementById('nav');
+
+    if (nav) {
+      nav.style.transform = '';
+      nav.style.opacity = '';
+      nav.style.transition = '';
+    }
+    if (sheet) {
+      const panel = sheet.querySelector('.preview-sheet');
+      const backdrop = sheet.querySelector('.preview-backdrop');
+      panel.style.transform = '';
+      panel.style.opacity = '';
+      panel.style.transition = '';
+      backdrop.style.opacity = '';
+      backdrop.style.transition = '';
+    }
+  }
+
   // The shell starts where the island is, with its size, and grows to host the app (and back again)
   function measure() {
     const nav = document.getElementById('nav');
@@ -216,7 +234,8 @@
   }
 
   function showHint() {
-    if (!touchScreen.matches) {
+    // Only full pages show it: a link bubble is small and the hint would cover it
+    if (!touchScreen.matches || !canSlide()) {
       return;
     }
     let seen = 0;
@@ -254,6 +273,7 @@
     sheet.querySelector('.preview-backdrop').style.opacity = '';
 
     if (open) {
+      restoreIsland();
       const root = document.documentElement;
       const nav = document.getElementById('nav');
       const grow = function () {
@@ -289,6 +309,7 @@
         sheet.querySelector('.preview-body').textContent = '';
         // Back to just the island: it shows its own glass again, then (when shortened) narrows back
         document.documentElement.classList.remove('island-hosting', 'island-widening');
+        restoreIsland();
       }, reduceMotion.matches || instant ? 0 : 500);
     }
   }
@@ -297,8 +318,12 @@
   function show(barUrl, replace) {
     lastFocus = lastFocus || document.activeElement;
 
+    openToken++;
+    document.documentElement.classList.toggle('preview-page', sheet.classList.contains('is-page'));
+
     if (!isOpen) {
       isOpen = true;
+      labelToggle();
       setOpen(true);
     } else {
       measure();
@@ -350,6 +375,7 @@
     sheet.querySelector('.preview-host').textContent = display;
     // Our own domains lead to their own address; pages of this site are already where they belong
     const path = sameSite ? url.pathname : (pagePath || null);
+    sheet.classList.toggle('no-slide', LINK_LISTS.indexOf(path) !== -1);
     markDock(path);
     let first = true;
 
@@ -427,6 +453,11 @@
       }
       card.querySelector('strong').textContent = info.name;
       card.querySelector('.preview-text').textContent = info.text;
+      // Leaving for the app: close straight away, so this tab is clean when the visitor comes back
+      // (a tab in the background pauses animations and timers, which left a half-closed panel behind)
+      card.addEventListener('click', function () {
+        close(false, true);
+      });
       body.appendChild(card);
     }
     show(null, false);
@@ -437,7 +468,9 @@
       return;
     }
     isOpen = false;
+    document.documentElement.classList.remove('preview-page');
     setOpen(false, instant);
+    labelToggle();
     markDock(null);
     document.documentElement.classList.remove('preview-locked');
 
@@ -459,6 +492,12 @@
   // The whole island (its row and the app) follows the finger; let go far enough, or flick, and it flies off
   // that way. Otherwise it springs back.
   const touchScreen = window.matchMedia('(max-width: 820px)');
+  // Pages that are just lists of links: tapping them should never start a slide
+  const LINK_LISTS = ['/apps/'];
+
+  function canSlide() {
+    return sheet.classList.contains('is-page') && !sheet.classList.contains('no-slide');
+  }
 
   function enableDrag() {
     const panel = sheet.querySelector('.preview-sheet');
@@ -470,6 +509,7 @@
     let dragging = false;
     let samples = [];
     let zone = null;
+    let flying = false;
 
     function place(x, y) {
       const move = ' translate(' + x + 'px, ' + y + 'px)';
@@ -494,7 +534,7 @@
     }
 
     function down(event) {
-      if (!touchScreen.matches || !isOpen || (event.pointerType === 'mouse' && event.button !== 0)) {
+      if (!touchScreen.matches || !isOpen || !canSlide() || flying || start || (event.pointerType === 'mouse' && event.button !== 0)) {
         return;
       }
       zone = event.currentTarget;
@@ -505,7 +545,7 @@
     }
 
     function move(event) {
-      if (!start || event.currentTarget !== zone) {
+      if (!start || (event.currentTarget !== zone && event.currentTarget !== window) || flying) {
         return;
       }
       const x = event.clientX - start.x;
@@ -548,7 +588,7 @@
       const distance = Math.hypot(delta.x, delta.y);
 
       // A drag that started on a button is not a tap on it
-      if (event.type === 'pointerup') {
+      if (event.type === 'pointerup' && zone) {
         const swallow = function (clickEvent) {
           clickEvent.stopPropagation();
           clickEvent.preventDefault();
@@ -570,8 +610,15 @@
         place(Math.cos(angle) * far, Math.sin(angle) * far);
         panel.style.opacity = '0';
         nav.style.opacity = '0';
+        flying = true;
+        const token = openToken;
         setTimeout(function () {
-          close(false, true);
+          flying = false;
+
+          // Only close the app this slide started on (another one may have been opened meanwhile)
+          if (token === openToken) {
+            close(false, true);
+          }
           // The island comes back in its place
           panel.style.transition = 'none';
           nav.style.transition = 'none';
@@ -599,6 +646,29 @@
       target.addEventListener('pointermove', move);
       target.addEventListener('pointerup', up);
       target.addEventListener('pointercancel', up);
+      // Only the drag area losing the finger counts. (On touch screens the browser first holds the finger on the
+      // element under it and lets go of it when the drag takes over; that is not the finger lifting.)
+      target.addEventListener('lostpointercapture', function (event) {
+        if (event.target === zone && !dragging) {
+          up(event);
+        }
+      });
+    });
+
+    // However the finger leaves (anywhere on screen, a cancelled touch, a lost event), the drag always ends
+    ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'blur'].forEach(function (type) {
+      window.addEventListener(type, function (event) {
+        if (start) {
+          up(event);
+        }
+      }, true);
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && start) {
+        start = null;
+        dragging = false;
+        reset(false);
+      }
     });
   }
 
@@ -651,6 +721,52 @@
     openExternal(href, url, serviceFor(url), display);
     return true;
   }
+
+  // While an app is open, the island's theme button is its ✕
+  function labelToggle() {
+    const toggle = document.querySelector('#nav .theme-toggle');
+
+    if (!toggle) {
+      return;
+    }
+    const label = isOpen ? 'Close'
+      : (document.documentElement.getAttribute('data-theme') === 'dark' ? 'Switch to light' : 'Switch to dark');
+    toggle.setAttribute('aria-label', label);
+    toggle.title = label;
+  }
+
+  document.addEventListener('click', function (event) {
+    const toggle = event.target.closest ? event.target.closest('#nav .theme-toggle') : null;
+
+    if (toggle && isOpen) {
+      event.preventDefault();
+      close();
+    }
+  });
+
+  // If no app is open, nothing of the panel may remain: no blur, no transparent island, no locked page
+  function settle() {
+    if (isOpen || !sheet) {
+      return;
+    }
+    clearTimeout(hideTimer);
+    clearTimeout(widenTimer);
+    sheet.classList.remove('is-open', 'show-hint');
+    sheet.hidden = true;
+    sheet.querySelector('.preview-body').textContent = '';
+    document.documentElement.classList.remove('island-hosting', 'island-widening', 'preview-locked', 'preview-page');
+    restoreIsland();
+    markDock(null);
+    labelToggle();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) {
+      settle();
+    }
+  });
+  window.addEventListener('pageshow', settle);
+  window.addEventListener('focus', settle);
 
   window.addEventListener('popstate', function () {
     if (historyEntry) {

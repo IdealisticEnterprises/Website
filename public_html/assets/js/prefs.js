@@ -66,7 +66,8 @@
   document.addEventListener('click', function (event) {
     const button = event.target.closest ? event.target.closest('.theme-toggle') : null;
 
-    if (!button) {
+    // While an app is open this button is its ✕ (preview.js closes it); it does not switch the theme
+    if (!button || root.classList.contains('preview-locked')) {
       return;
     }
     const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';

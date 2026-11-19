@@ -452,3 +452,12 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
         margin-top: 0;
     }
 }
+
+/* Phone Dock: always 4 apps showing. The pages snap at the start, and the last page snaps to the end,
+   so it shows the last 4 apps instead of empty slots. */
+@media (max-width: 820px) {
+    /* The apps are links (<a>); the last one is the last <a> in the track */
+    .dock-track > a.dock-item:last-of-type {
+        scroll-snap-align: end;
+    }
+}
