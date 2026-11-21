@@ -124,6 +124,18 @@
       });
     });
 
+    // The line before the Move button does not fly: it stays hidden until the last app has landed, then fades in
+    const separator = dock.querySelector('.dock-separator');
+
+    if (separator) {
+      const landed = 620 + (items.length - 1) * 32;
+      separator.animate([
+        {opacity: 0},
+        {opacity: 0, offset: landed / (landed + 280), easing: 'ease'},
+        {opacity: 1}
+      ], {duration: landed + 280});
+    }
+
     if (next === 'bottom') {
       dock.animate([
         {backgroundColor: 'rgba(28, 30, 38, 0)', borderColor: 'rgba(255, 255, 255, 0)', boxShadow: '0 0 0 rgba(0, 0, 0, 0)'},
