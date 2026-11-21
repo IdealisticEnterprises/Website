@@ -405,3 +405,117 @@ body > .footer {
         padding-bottom: calc(24px + 132px + env(safe-area-inset-bottom, 0px));
     }
 }
+
+/* Home: where doremi.chat is coming, one platform after another (landing.js). The platforms share one spot as wide
+   as the longest name, so the line never moves; each slides up in as the previous one slides up out. */
+.home-where {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    color: var(--muted);
+    font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+}
+
+.home-where-link {
+    display: inline-flex;
+    color: inherit;
+    text-decoration: none;
+}
+
+.home-where-link > [aria-hidden] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+}
+
+/* It leads to the doremi.chat page: the platform's name turns blue on hover */
+.home-where-link:hover .home-rotator-item,
+.home-where-link:focus-visible .home-rotator-item {
+    color: var(--blue-soft);
+}
+
+html[data-theme="light"] .home-where-link:hover .home-rotator-item,
+html[data-theme="light"] .home-where-link:focus-visible .home-rotator-item {
+    color: #2563eb;
+}
+
+.home-where .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.home-rotator {
+    display: inline-grid;
+    height: 2em;
+    overflow: hidden;
+}
+
+.home-rotator-item {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    justify-self: start;
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(75%);
+    transition: opacity 0.45s ease, transform 0.6s cubic-bezier(0.32, 0.72, 0, 1), color 0.2s ease;
+}
+
+.home-rotator-item.is-current {
+    opacity: 1;
+    transform: none;
+}
+
+.home-rotator-item.is-leaving {
+    opacity: 0;
+    transform: translateY(-75%);
+}
+
+.home-rotator-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.45em;
+    height: 1.45em;
+    border-radius: 23% !important;
+    background: var(--tile);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.home-rotator-icon .app-logo-glyph {
+    width: 62%;
+    height: 62%;
+    background: #ffffff;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
+}
+
+.home-rotator-icon .app-logo-svg {
+    display: grid;
+    width: 64%;
+    height: 64%;
+}
+
+.home-rotator-icon .app-logo-svg svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-rotator-item,
+    .home-rotator-item.is-leaving {
+        transform: none;
+    }
+}

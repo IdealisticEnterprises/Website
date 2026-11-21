@@ -140,3 +140,179 @@
         animation: none;
     }
 }
+
+/* ---------- Search in the island (preview.js) ----------
+   Clicking the island turns its name into a search field for the apps; the results open in the panel, like an app.
+   Not while an app is open, and not while the Dock sits in the island. */
+html:not(.preview-locked) #nav.nav:not(.is-searching) {
+    cursor: text;
+}
+
+html:not(.preview-locked) #nav.nav:not(.is-searching) .brand a,
+html:not(.preview-locked) #nav.nav:not(.is-searching) .theme-toggle {
+    cursor: pointer;
+}
+
+@media (min-width: 821px) {
+    html[data-dock="top"] #nav.nav {
+        cursor: auto;
+    }
+}
+
+.island-search {
+    display: none;
+}
+
+#nav.nav.is-searching .brand {
+    display: none;
+}
+
+#nav.nav.is-searching .island-search {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    animation: island-search-in 0.3s var(--island-ease) both;
+}
+
+@keyframes island-search-in {
+    from {
+        opacity: 0;
+        transform: translateX(-6px);
+    }
+}
+
+.island-search svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.island-search input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    /* 16px or more: phones do not zoom in when the field is focused */
+    font-size: 1rem;
+    font-weight: 500;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.island-search input::placeholder {
+    color: var(--muted);
+}
+
+.island-search input::-webkit-search-cancel-button {
+    display: none;
+}
+
+/* Results: inside the panel, which grows down out of the island like an app (preview.css), so no glass of their
+   own. They scroll when there are more than fit above the Dock. */
+.island-results {
+    margin: 10px;
+    max-height: min(460px, calc(100vh - var(--island-top, 16px) - var(--island-h, 60px) - 150px));
+    max-height: min(460px, calc(100dvh - var(--island-top, 16px) - var(--island-h, 60px) - 150px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* While searching, the field sits in the island's own row: no title bar, and the field takes clicks */
+.preview.is-search .preview-bar,
+.preview.is-search .preview-grab {
+    display: none;
+}
+
+html.island-hosting #nav .island-search {
+    pointer-events: auto;
+}
+
+/* Each app's highlight is round like the island (concentric with the list's corners: 26px - 8px padding),
+   and only one is highlighted at a time: the one under the pointer, or chosen with the arrow keys */
+.island-result {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 12px;
+    border-radius: 18px !important;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.island-result.is-active {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.island-result-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 23% !important;
+    background: linear-gradient(180deg, #6b7280, #374151);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.island-result-icon svg {
+    width: 54%;
+    height: 54%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.island-result-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.island-result-text strong {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.island-result-text span {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.island-results-empty {
+    margin: 0;
+    padding: 14px 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+html[data-theme="light"] .island-result.is-active {
+    background: rgba(15, 20, 30, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #nav.nav.is-searching .island-search {
+        animation: none;
+    }
+}

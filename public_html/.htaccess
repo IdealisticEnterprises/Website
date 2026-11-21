@@ -3,6 +3,12 @@
 DirectoryIndex index.html
 Options -Indexes
 
+# The host's PageSpeed module rewrites and combines our CSS and JS (new file names, merged files), which can serve
+# stale or mismatched copies. Our files are already small and versioned (?v=...), so it stays off.
+<IfModule pagespeed_module>
+    ModPagespeed off
+</IfModule>
+
 # Custom error pages
 ErrorDocument 401 /401/index.html
 ErrorDocument 403 /403/index.html

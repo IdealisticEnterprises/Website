@@ -489,3 +489,56 @@ html.island-widening #nav.nav.is-compact {
         --sheet-r: 40px;
     }
 }
+
+/* Switching apps while the panel is open (preview.js): the old app fades out in place while the new one fades in
+   over it, and the title and address fade to the new ones. Opening and closing keep their own animation. */
+.preview-body > .preview-leaving {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.32s ease;
+}
+
+.preview-body > iframe.preview-leaving {
+    bottom: 0;
+    height: 100%;
+}
+
+.preview-body > .preview-leaving.is-gone {
+    opacity: 0;
+}
+
+.preview-body > .preview-entering {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.32s ease;
+}
+
+.preview-body > .preview-entering.is-in {
+    opacity: 1;
+}
+
+.preview-where.is-switching {
+    animation: preview-where-in 0.35s ease both;
+}
+
+@keyframes preview-where-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preview-body > .preview-leaving,
+    .preview-body > .preview-entering {
+        transition-duration: 0.01s;
+    }
+
+    .preview-where.is-switching {
+        animation: none;
+    }
+}

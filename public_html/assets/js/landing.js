@@ -290,6 +290,33 @@
     };
   }
 
+  // Home: the platforms doremi.chat is coming to, one after another, over and over
+  document.querySelectorAll('[data-rotate]').forEach(function (rotator) {
+    const items = Array.from(rotator.children);
+    let index = 0;
+
+    if (items.length < 2) {
+      return;
+    }
+    setInterval(function () {
+      if (document.hidden) {
+        return;
+      }
+      const previous = items[index];
+      index = (index + 1) % items.length;
+      const next = items[index];
+
+      // The next one starts below, without animating there, then slides up in as the previous one slides out
+      next.style.transition = 'none';
+      next.classList.remove('is-leaving');
+      void next.offsetWidth;
+      next.style.transition = '';
+      previous.classList.remove('is-current');
+      previous.classList.add('is-leaving');
+      next.classList.add('is-current');
+    }, 2400);
+  });
+
   document.querySelectorAll('details[data-accordion]').forEach(function (details) {
     const summary = details.querySelector(':scope > summary');
     const group = details.getAttribute('data-accordion');

@@ -246,7 +246,7 @@
     if (sheet.classList.contains('is-page')) {
       openH = bottomEdge - box.top;
     } else {
-      const card = body.firstElementChild;
+      const card = body.querySelector(':scope > :not(.preview-leaving)');
       openH = islandH + (card ? card.offsetHeight + 20 : 0);
     }
 
@@ -268,8 +268,10 @@
     panel.style.setProperty('--island-h', islandH + 'px');
     panel.style.setProperty('--bar-left', barLeft + 'px');
     panel.style.setProperty('--bar-right', barRight + 'px');
-    panel.style.setProperty('--open-h', Math.max(openH, islandH + 120) + 'px');
-    const bodyH = Math.max(openH - islandH, 60);
+    // Search results fit exactly (one result is a short panel); other bubbles keep a minimum size
+    const minBody = sheet.classList.contains('is-search') ? 40 : 120;
+    panel.style.setProperty('--open-h', Math.max(openH, islandH + minBody) + 'px');
+    const bodyH = Math.max(openH - islandH, Math.min(minBody, 60));
     const oldBodyH = parseFloat(panel.style.getPropertyValue('--body-h')) || 0;
     clearTimeout(shrinkTimer);
 
@@ -397,15 +399,69 @@
 
 
 
+  // Switching apps while the panel is open: the island stays and simply changes. The app that was open stays in
+  // place and fades out while the new one fades in over it (a page fades in once it has loaded, so there is never
+  // an empty panel in between). Opening and closing an app on its own keep their usual animation.
+  function beginSwitch(body) {
+    if (!isOpen || !body.children.length) {
+      body.textContent = '';
+      return null;
+    }
+    const leaving = Array.from(body.children);
+    leaving.forEach(function (element) {
+      element.classList.remove('preview-entering', 'is-in');
+      element.classList.add('preview-leaving');
+    });
+    // The title and address change with it
+    const where = sheet.querySelector('.preview-where');
+    where.classList.remove('is-switching');
+    void where.offsetWidth;
+    where.classList.add('is-switching');
+    return leaving;
+  }
+
+  function finishSwitch(leaving, entering) {
+    if (!leaving) {
+      return function () {};
+    }
+    entering.classList.add('preview-entering');
+    let done = false;
+    const reveal = function () {
+      if (done) {
+        return;
+      }
+      done = true;
+      requestAnimationFrame(function () {
+        entering.classList.add('is-in');
+        leaving.forEach(function (element) {
+          element.classList.add('is-gone');
+        });
+        setTimeout(function () {
+          leaving.forEach(function (element) {
+            // Unless it came back in the meantime (the search list is reused)
+            if (element.classList.contains('preview-leaving')) {
+              element.classList.remove('preview-leaving', 'is-gone');
+              element.remove();
+            }
+          });
+        }, reduceMotion.matches ? 0 : 380);
+      });
+    };
+    // Never wait long for a slow page
+    setTimeout(reveal, 2500);
+    return reveal;
+  }
+
   // A page of this site (or one of our own domains), loaded inside the sheet as an iframe of its address
   function openPage(url, display, replace, pagePath) {
     if (!sheet) {
       build();
     }
+    leaveSearch();
     const sameSite = url.origin === location.origin;
     const body = sheet.querySelector('.preview-body');
+    const leaving = beginSwitch(body);
     sheet.classList.add('is-page');
-    body.textContent = '';
     sheet.querySelector('#preview-title').textContent = '';
     sheet.querySelector('.preview-host').textContent = display;
     // Our own domains lead to their own address; pages of this site are already where they belong
@@ -416,7 +472,10 @@
     const frame = document.createElement('iframe');
     frame.title = 'Page';
     frame.src = url.href;
+    const reveal = finishSwitch(leaving, frame);
     frame.addEventListener('load', function () {
+      reveal();
+
       try {
         const inner = frame.contentWindow.location;
         const title = frame.contentDocument.title.replace(/\s*\|\s*iDEALISTIC®\s*$/, '');
@@ -447,6 +506,7 @@
     if (!sheet) {
       build();
     }
+    leaveSearch();
     sheet.classList.remove('is-page');
     const host = url.hostname.replace(/^www\./, '');
     const info = service || {name: host, host: host, text: 'An external website.', tile: 'linear-gradient(180deg, #6b7280, #374151)', glyph: '↗'};
@@ -456,7 +516,7 @@
     sheet.setAttribute('data-href', url.href);
     markDock(url.href);
     const body = sheet.querySelector('.preview-body');
-    body.textContent = '';
+    const leaving = beginSwitch(body);
 
     if (info.frame) {
       const frame = document.createElement('iframe');
@@ -466,6 +526,7 @@
       // No allow-top-navigation: the framed page can never navigate this window away
       frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
       body.appendChild(frame);
+      finishSwitch(leaving, frame)();
     } else {
       const card = document.createElement('a');
       card.className = 'preview-card';
@@ -495,6 +556,7 @@
         close(false, true);
       });
       body.appendChild(card);
+      finishSwitch(leaving, card)();
     }
     show(null, false);
   }
@@ -503,6 +565,7 @@
     if (!sheet || !isOpen) {
       return;
     }
+    leaveSearch();
     isOpen = false;
     document.documentElement.classList.remove('preview-page');
     setOpen(false, instant);
@@ -862,25 +925,11 @@
     }
   });
 
-  // A page opened directly (prefs.js sent it here as /?page=...): Home with that page open on top
-  const params = new URLSearchParams(location.search);
-  const requested = params.get('page');
-
-  if (requested && requested.charAt(0) === '/' && requested.charAt(1) !== '/') {
-    const target = new URL(requested, location.origin);
-
-    if (isStandalone(target)) {
-      // An old link to a legal page: show it on its own
-      location.replace(target.pathname + target.search + target.hash);
-    } else if (target.origin === location.origin && target.pathname !== '/') {
-      history.replaceState(null, '', '/');
-      openPage(target, shown(target), false);
-    }
-  }
   // ---------- Search in the island ----------
   // Clicking the island (not its buttons or links) turns it into a search for the apps: the Dock's apps and the
-  // other pages that open as apps (FAQ, Advertisements, Work, AI). Not while an app is open, and not while the
-  // Dock itself sits in the island (moved to the top on wide screens).
+  // other pages that open as apps (FAQ, Advertisements, Work, AI). The results open in the panel, exactly like an
+  // app: the island grows down to hold them, the page behind blurs, and the theme button is the ✕. Choosing one
+  // turns the panel into that app. Not while an app is open, and not while the Dock sits in the island.
   const SEARCH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
   const EXTRA_ICONS = {
     '/faq/': {tile: 'linear-gradient(180deg, #7cc8ff 0%, #2563eb 100%)', svg: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4"/><path d="M12 16.6v.1"/>'},
@@ -971,6 +1020,10 @@
     return searchNav && !EMBEDDED && !isOpen && !dockInIsland && !root.classList.contains('preview-locked');
   }
 
+  function searching() {
+    return Boolean(sheet && sheet.classList.contains('is-search'));
+  }
+
   function buildSearch() {
     searchForm = document.createElement('form');
     searchForm.className = 'island-search';
@@ -986,22 +1039,21 @@
     searchList.id = 'island-results';
     searchList.setAttribute('role', 'listbox');
     searchList.setAttribute('aria-label', 'Apps');
-    searchList.hidden = true;
-    document.body.appendChild(searchList);
 
     searchInput.addEventListener('input', function () {
       searchActive = 0;
       renderResults();
+      measure(true);
     });
     searchInput.addEventListener('keydown', function (event) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         const step = event.key === 'ArrowDown' ? 1 : -1;
         searchActive = (searchActive + step + searchShown.length) % Math.max(searchShown.length, 1);
-        markActive();
+        markActive(true);
       } else if (event.key === 'Escape') {
         event.preventDefault();
-        closeSearch();
+        close();
       }
     });
     searchForm.addEventListener('submit', function (event) {
@@ -1014,6 +1066,15 @@
     searchList.addEventListener('mousedown', function (event) {
       event.preventDefault(); // keep the field focused while choosing
     });
+    // The highlight follows the pointer: one app highlighted at a time, the same one Enter opens
+    searchList.addEventListener('mousemove', function (event) {
+      const row = event.target.closest('[data-index]');
+
+      if (row && Number(row.getAttribute('data-index')) !== searchActive) {
+        searchActive = Number(row.getAttribute('data-index'));
+        markActive(false);
+      }
+    });
     searchList.addEventListener('click', function (event) {
       const row = event.target.closest('[data-index]');
 
@@ -1021,13 +1082,6 @@
         openResult(searchShown[Number(row.getAttribute('data-index'))]);
       }
     });
-  }
-
-  function placeResults() {
-    const box = searchNav.getBoundingClientRect();
-    searchList.style.top = Math.round(box.bottom + 8) + 'px';
-    searchList.style.left = Math.round(box.left) + 'px';
-    searchList.style.width = Math.round(box.width) + 'px';
   }
 
   function renderResults() {
@@ -1084,10 +1138,11 @@
       row.appendChild(text);
       searchList.appendChild(row);
     });
-    markActive();
+    markActive(true);
   }
 
-  function markActive() {
+  // scroll: bring the highlighted app into view (keyboard), not when the pointer chose it
+  function markActive(scroll) {
     searchList.querySelectorAll('.island-result').forEach(function (row, index) {
       const active = index === searchActive;
       row.classList.toggle('is-active', active);
@@ -1095,74 +1150,89 @@
 
       if (active) {
         searchInput.setAttribute('aria-activedescendant', row.id);
-        row.scrollIntoView({block: 'nearest'});
+
+        if (scroll) {
+          row.scrollIntoView({block: 'nearest'});
+        }
       }
     });
   }
 
   function openSearch() {
+    if (!sheet) {
+      build();
+    }
     if (!searchForm) {
       buildSearch();
     }
     searchItems = collectApps();
     searchActive = 0;
     searchInput.value = '';
-    searchNav.classList.add('is-searching');
-    placeResults();
     renderResults();
-    searchList.hidden = false;
-    requestAnimationFrame(function () {
-      searchList.classList.add('is-shown');
-    });
+
+    // The panel holds the results, like an app: no title bar, the field is in the island's own row
+    sheet.classList.remove('is-page');
+    sheet.classList.add('is-search');
+    sheet.querySelector('#preview-title').textContent = 'Search';
+    sheet.querySelector('.preview-host').textContent = '';
+    const body = sheet.querySelector('.preview-body');
+    body.textContent = '';
+    searchList.classList.remove('preview-leaving', 'is-gone', 'preview-entering', 'is-in');
+    body.appendChild(searchList);
+    markDock(null);
+    searchNav.classList.add('is-searching');
+    show(null, false);
     searchInput.focus({preventScroll: true});
   }
 
-  function closeSearch() {
-    if (!searchNav || !searchNav.classList.contains('is-searching')) {
-      return;
+  // Back to a plain island (the panel closed, or it now shows the chosen app)
+  function leaveSearch() {
+    if (sheet) {
+      sheet.classList.remove('is-search');
     }
-    searchNav.classList.remove('is-searching');
-    searchList.classList.remove('is-shown');
-    searchList.hidden = true;
-    searchInput.blur();
+    if (searchNav && searchNav.classList.contains('is-searching')) {
+      searchNav.classList.remove('is-searching');
+
+      if (searchInput) {
+        searchInput.blur();
+      }
+    }
   }
 
   function openResult(item) {
-    closeSearch();
-
     if (!item) {
       return;
     }
-    // Open it like a click on the app: in the panel (or as a card, for apps that live elsewhere)
+    // Open it like a click on the app: the panel turns into it (or its card, for apps that live elsewhere)
     if (!route(item.href, null)) {
+      close(false, true);
       location.href = item.href;
     }
   }
 
   if (searchNav && !EMBEDDED) {
     searchNav.addEventListener('click', function (event) {
-      if (searchNav.classList.contains('is-searching')
-        || event.target.closest('a, button, input, form, .dock') || !searchAllowed()) {
+      if (searching() || event.target.closest('a, button, input, form, .dock') || !searchAllowed()) {
         return;
       }
       openSearch();
     });
-    document.addEventListener('click', function (event) {
-      if (searchNav.classList.contains('is-searching')
-        && !event.target.closest('#nav') && !event.target.closest('.island-results')) {
-        closeSearch();
-      }
-    });
-    window.addEventListener('resize', function () {
-      if (searchNav.classList.contains('is-searching')) {
-        placeResults();
-      }
-    });
-    // An app opening (from the Dock, a link, the back button) puts the island back as it was
-    new MutationObserver(function () {
-      if (document.documentElement.classList.contains('preview-locked')) {
-        closeSearch();
-      }
-    }).observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
+  }
+
+  // A page opened directly (prefs.js sent it here as /?page=...): Home with that page open on top.
+  // Last in this file: opening a page uses everything above (the search included), which must exist first.
+  const params = new URLSearchParams(location.search);
+  const requested = params.get('page');
+
+  if (requested && requested.charAt(0) === '/' && requested.charAt(1) !== '/') {
+    const target = new URL(requested, location.origin);
+
+    if (isStandalone(target)) {
+      // An old link to a legal page: show it on its own
+      location.replace(target.pathname + target.search + target.hash);
+    } else if (target.origin === location.origin && target.pathname !== '/') {
+      history.replaceState(null, '', '/');
+      openPage(target, shown(target), false);
+    }
   }
 })();

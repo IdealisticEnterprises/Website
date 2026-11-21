@@ -163,3 +163,171 @@ html[data-theme="light"] .app-logo-tip {
 span.app-logo {
     cursor: default;
 }
+
+/* ---------- Apps page: like an app store page, the iOS app first, then the Android app ---------- */
+.store-listing {
+    padding: 40px 0;
+}
+
+.store-listing + .store-listing {
+    border-top: 1px solid var(--line);
+}
+
+html.embedded .store-listing:first-child {
+    padding-top: 28px;
+}
+
+.store-head {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+/* The app icon: rounded like every app icon */
+.store-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 112px;
+    height: 112px;
+    border-radius: 23% !important;
+    background: linear-gradient(180deg, #ffffff 0%, #e4e9f1 100%);
+    box-shadow: inset 0 0 0 1px rgba(15, 20, 30, 0.08), 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+
+.store-icon img {
+    width: 58%;
+    height: 58%;
+}
+
+.store-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.store-title h2 {
+    margin: 0;
+    font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.store-sub {
+    margin: 6px 0 0 0;
+    color: var(--ink);
+    font-size: 1rem;
+}
+
+.store-dev {
+    margin: 2px 0 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.store-get {
+    flex: none;
+    min-width: 110px;
+    justify-content: center;
+}
+
+/* Information row: small label above, value below, split by thin lines */
+.store-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 30px 0 0 0;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.store-info > div {
+    padding: 0 16px;
+    text-align: center;
+}
+
+.store-info > div + div {
+    border-left: 1px solid var(--line);
+}
+
+.store-info dt {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.store-info dd {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0 0 0;
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.store-badge {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 23% !important;
+    background: var(--tile);
+}
+
+.store-badge span {
+    width: 62%;
+    height: 62%;
+    background: #ffffff;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
+}
+
+.store-about {
+    max-width: 640px;
+    margin: 24px 0 0 0;
+    color: var(--ink);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.store-notice {
+    margin: 12px 0 0 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+/* Phones: the button goes under the name, full width; the information row stays in three short columns */
+@media (max-width: 640px) {
+    .store-head {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .store-icon {
+        width: 88px;
+        height: 88px;
+    }
+
+    .store-title {
+        flex-basis: calc(100% - 104px);
+    }
+
+    .store-get {
+        flex: 1 1 100%;
+    }
+
+    .store-info > div {
+        padding: 0 8px;
+    }
+
+    .store-info dd {
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.85rem;
+        text-align: center;
+    }
+}
