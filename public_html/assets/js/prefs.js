@@ -22,9 +22,9 @@
   if (window.self !== window.top) {
     document.documentElement.classList.add('embedded');
   } else if (location.pathname !== '/' && location.pathname !== '/index.html'
-    && !/^\/(terms|policies|instructions)(\/|$)/.test(location.pathname)) {
+    && !/^\/legal(\/|$)/.test(location.pathname)) {
     // Home is always there: a page opened directly is shown on top of Home, in the sheet.
-    // Legal pages (terms, policies, instructions) are the exception: they load as ordinary pages.
+    // Legal pages (/legal/...) are the exception: they load as ordinary pages.
     location.replace('/?page=' + encodeURIComponent(location.pathname + location.search + location.hash));
     return;
   }

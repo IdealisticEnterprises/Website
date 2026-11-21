@@ -25,7 +25,7 @@
     'vagdedes.com': {name: 'Community', host: 'vagdedes.com', text: 'The creator\'s Discord server, where the iDEALISTIC® community meets.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
     'idealistic.community': 'vagdedes.com',
     github: {name: 'GitHub', host: 'github.com', text: 'IdealisticEnterprises on GitHub.', logo: 'github', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'G'},
-    'spartan.top': {name: 'Spartan AntiCheat', host: 'spartan.top', text: 'Another product by Idealistic OÜ.', tile: 'linear-gradient(180deg, #ff8a6b, #d9381e)', glyph: 'S'},
+    'spartan.report': {name: 'Spartan AntiCheat', host: 'spartan.report', text: 'Another product by Idealistic OÜ.', tile: 'linear-gradient(180deg, #ff8a6b, #d9381e)', glyph: 'S'},
     'ariregister.rik.ee': {name: 'Estonian Business Register', host: 'ariregister.rik.ee', text: 'The official company record of Idealistic OÜ.', tile: 'linear-gradient(180deg, #6cc6ff, #0b5cad)', glyph: 'E'},
     'euipo.europa.eu': {name: 'EU trademark', host: 'euipo.europa.eu', text: 'EU trademark no. 019353308 for iDEALISTIC®.', tile: 'linear-gradient(180deg, #6c8cff, #1a3a9e)', glyph: '®'}
   };
@@ -45,6 +45,10 @@
     'idealistic.email': '/email/',
     'idealistic.help': '/faq/',
     'idealistic.contact': '/email/',
+    'idealistic.company': '/company/',
+    'idealistic.business': '/company/',
+    'idealistic.trade': '/trademark/',
+    'idealistic.news': '/news/',
     'idealistic.shop': '/club/',
     'idealistic.enterprises': null
   };
@@ -60,6 +64,9 @@
     '/discounts/': 'idealistic.discount',
     '/sales/': 'idealistic.sale',
     '/email/': 'idealistic.email',
+    '/company/': 'idealistic.company',
+    '/trademark/': 'idealistic.trade',
+    '/news/': 'idealistic.news',
     '/faq/': 'idealistic.help'
   };
 
@@ -98,6 +105,10 @@
     if (url.origin === location.origin && PAGE_DOMAIN[url.pathname]) {
       return PAGE_DOMAIN[url.pathname] + url.search + url.hash;
     }
+    // A story on idealistic.news: /news/<story>/ is shown as idealistic.news/<story>
+    if (url.origin === location.origin && /^\/news\/./.test(url.pathname)) {
+      return 'idealistic.news/' + url.pathname.slice('/news/'.length).replace(/\/$/, '') + url.search + url.hash;
+    }
     const path = url.pathname === '/' ? '' : url.pathname;
     return url.hostname.replace(/^www\./, '') + path + url.search + url.hash;
   }
@@ -109,9 +120,10 @@
       && !/\.[a-z0-9]{2,5}$/i.test(url.pathname);
   }
 
-  // Legal pages (terms, policies, instructions) load as ordinary pages, never inside the panel
+  // Legal pages (/legal/..., and their old addresses, which the server sends there) load as ordinary pages,
+  // never inside the panel
   function isStandalone(url) {
-    return url.origin === location.origin && /^\/(terms|policies|instructions)(\/|$)/.test(url.pathname);
+    return url.origin === location.origin && /^\/(legal|terms|policies|instructions)(\/|$)/.test(url.pathname);
   }
 
   // Home itself, or a legal page that loaded on its own
@@ -1030,6 +1042,9 @@
     '/faq/': {tile: 'linear-gradient(180deg, #5eead4 0%, #0f9488 100%)', svg: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4"/><path d="M12 16.6v.1"/>'},
     '/ads/': {tile: 'linear-gradient(180deg, #6ee7d8 0%, #0d8f84 100%)', svg: '<path d="M9 9l11 4-4.8 1.6L13.6 19.5z"/><path d="M5.5 3.5l1.2 2.4M3 8l2.6.6M11.5 3.2l-.9 2.6"/>'},
     '/work/': {tile: 'linear-gradient(180deg, #a3aab5 0%, #4b5260 100%)', svg: '<rect x="3.5" y="7.5" width="17" height="12.5" rx="2.5"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5"/><path d="M3.5 12.5h17"/>'},
+    '/news/': {tile: 'linear-gradient(180deg, #9aa2ff 0%, #4338ca 100%)', svg: '<path d="M5 4.5h11.5a1 1 0 0 1 1 1V18a1.5 1.5 0 0 0 3 0V8.5h-3"/><path d="M5 4.5a1 1 0 0 0-1 1V18a1.5 1.5 0 0 0 1.5 1.5h15"/><path d="M7.5 8h6.5M7.5 11.5h6.5M7.5 15h4"/>'},
+    '/company/': {tile: 'linear-gradient(180deg, #6cc6ff 0%, #0b5cad 100%)', svg: '<path d="M4.5 20.5V6.5l7-3 7 3v14"/><path d="M3 20.5h18"/><path d="M9 9.5h1.5M13.5 9.5H15M9 13h1.5M13.5 13H15M10.5 20.5v-3.5h3v3.5"/>'},
+    '/trademark/': {tile: 'linear-gradient(180deg, #6c8cff 0%, #1a3a9e 100%)', svg: '<circle cx="12" cy="12" r="8.5"/><path d="M10 16.5v-9h3a2.5 2.5 0 0 1 0 5h-3M13 12.5l2.5 4"/>'},
     '/ai/': {tile: 'linear-gradient(180deg, #c4b5fd 0%, #6d28d9 100%)', svg: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'}
   };
   const searchNav = document.getElementById('nav');
@@ -1065,13 +1080,14 @@
     '/work/': 'work job jobs career careers hiring hire apply application employment position positions vacancy vacancies team join recruit',
     '/ai/': 'ai artificial intelligence robot machine learning gpt model how we use ai',
     '/github': 'github code source source code open source repository repositories repo developer developers git',
-    '/terms/terms_of_use/': 'terms terms of use terms of service tos rules conditions agreement legal',
-    '/policies/privacy_policy/': 'privacy policy data personal data gdpr cookies tracking legal',
-    '/instructions/user_data_deletion/': 'delete deletion remove erase data account gdpr forget me right to be forgotten privacy legal',
-    'spartan.top': 'spartan anticheat anti cheat cheat cheating hack hacks hacker minecraft plugin server protection',
+    '/legal/terms_of_use/': 'terms terms of use terms of service tos rules conditions agreement legal',
+    '/legal/privacy_policy/': 'privacy policy data personal data gdpr cookies tracking legal',
+    '/legal/user_data_deletion/': 'delete deletion remove erase data account gdpr forget me right to be forgotten privacy legal',
+    'spartan.report': 'spartan anticheat anti cheat cheat cheating hack hacks hacker minecraft plugin server protection',
     'vagdedes.com': 'community discord server people members forum join social chat creator friends',
-    'ariregister.rik.ee': 'company business register registry estonia estonian legal entity registration idealistic ou owner owns owned behind who official',
-    'euipo.europa.eu': 'trademark brand registered euipo eu europe legal'
+    '/news/': 'news announcements announcement updates update blog stories story articles article press latest new whats new changelog',
+    '/company/': 'company business register registry estonia estonian legal entity registration idealistic ou owner owns owned behind who official',
+    '/trademark/': 'trademark brand registered euipo eu europe legal'
   };
 
   // Lower case, no accents, punctuation as spaces: "Idealistic OÜ" matches "idealistic ou"

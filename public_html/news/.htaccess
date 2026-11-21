@@ -1,0 +1,5 @@
+# idealistic.news: its own error pages
+ErrorDocument 401 /news/401/index.html
+ErrorDocument 403 /news/403/index.html
+ErrorDocument 404 /news/404/index.html
+ErrorDocument 500 /news/500/index.html

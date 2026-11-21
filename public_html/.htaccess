@@ -15,10 +15,10 @@ ErrorDocument 403 /403/index.html
 ErrorDocument 404 /404/index.html
 ErrorDocument 500 /500/index.html
 
-# Legal pages (terms, policies, instructions) are never kept in a cache: not by browsers, not by Cloudflare.
+# Legal pages (/legal/...) are never kept in a cache: not by browsers, not by Cloudflare.
 # Every visit gets the version on the server, so a change to them is seen at once.
 <IfModule mod_headers.c>
-    <If "%{REQUEST_URI} =~ m#^/(terms|policies|instructions)(/|$)#">
+    <If "%{REQUEST_URI} =~ m#^/legal(/|$)#">
         Header always set Cache-Control "no-store, max-age=0"
         Header always set CDN-Cache-Control "no-store"
         Header always set Cloudflare-CDN-Cache-Control "no-store"
@@ -44,7 +44,8 @@ ErrorDocument 500 /500/index.html
     RewriteRule ^downloadable/?$ /apps/ [R=301,L]
 
     # Each domain can simply be sent by Cloudflare to /<its name>: these lead on to its page
-    #   .click, .gives, .discount, .sale, .help (the FAQ), .contact (.email is /email itself), .shop
+    #   .click, .gives, .discount, .sale, .help (the FAQ), .contact (.email is /email itself), .shop,
+    #   .business (.company is /company itself), .trade (the trademark page)
     # The email page used to be /contact: old links lead on to /email
     RewriteRule ^click/?$ /ads/ [R=301,L]
     RewriteRule ^gives/?$ /giveaways/ [R=301,L]
@@ -53,9 +54,19 @@ ErrorDocument 500 /500/index.html
     RewriteRule ^help/?$ /faq/ [R=301,L]
     RewriteRule ^contact/?$ /email/ [R=301,L]
     RewriteRule ^shop/?$ /club/ [R=301,L]
+    RewriteRule ^business/?$ /company/ [R=301,L]
+    RewriteRule ^trade/?$ /trademark/ [R=301,L]
 
-    # Terms of Service and Terms of Use are the same terms
-    RewriteRule ^terms/terms_of_service/?$ /terms/terms_of_use/ [R=301,L]
+    # All legal information lives in /legal. The old addresses (still registered with app stores and Meta, for
+    # example) lead on to the new ones; Terms of Service and Terms of Use are the same terms.
+    RewriteRule ^legal/?$ /legal/terms_of_use/ [R=301,L]
+    RewriteRule ^(terms/)?terms_of_(use|service)/?$ /legal/terms_of_use/ [R=301,L]
+    RewriteRule ^legal/terms_of_service/?$ /legal/terms_of_use/ [R=301,L]
+    RewriteRule ^terms/?$ /legal/terms_of_use/ [R=301,L]
+    RewriteRule ^(policies/)?privacy_policy/?$ /legal/privacy_policy/ [R=301,L]
+    RewriteRule ^policies/?$ /legal/privacy_policy/ [R=301,L]
+    RewriteRule ^(instructions/)?user_data_deletion/?$ /legal/user_data_deletion/ [R=301,L]
+    RewriteRule ^instructions/?$ /legal/user_data_deletion/ [R=301,L]
 
     # Hide dotfiles and dot-folders (.DS_Store, .git, ...), except .well-known
     RewriteRule (^|/)\.(?!well-known(/|$)) - [R=404,L]

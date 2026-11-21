@@ -582,3 +582,73 @@ html.page-entering body {
 .human p:not(.label) + p:not(.label) {
     margin-top: 14px;
 }
+
+/* Company and Trademark pages: the official record as label / value rows, then the button to the registry */
+.human p.record-fact,
+.human p.record-fact + p.record-fact {
+    display: flex;
+    gap: 16px;
+    max-width: none;
+    margin: 0;
+    padding: 12px 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-top: 1px solid var(--line);
+    color: var(--ink);
+}
+
+.human h2 + p.record-fact {
+    margin-top: 18px;
+}
+
+.record-fact span {
+    flex: none;
+    width: 140px;
+    color: var(--muted);
+}
+
+.record .actions {
+    margin-top: 22px;
+}
+
+@media (max-width: 480px) {
+    .human p.record-fact,
+    .human p.record-fact + p.record-fact {
+        flex-direction: column;
+        gap: 2px;
+    }
+}
+
+/* ---------- News ---------- */
+.news-list {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.news-card h3 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.news-card h3 a:hover {
+    color: var(--blue-soft);
+}
+
+.news-story {
+    max-width: 760px;
+}
+
+.news-story p {
+    margin: 0 0 18px 0;
+    color: var(--ink);
+    font-size: 1.08rem;
+    line-height: 1.7;
+}
+
+.news-story .actions {
+    margin-top: 28px;
+}
+
+/* Home: the latest stories, under the first screen */
+.home-news {
+    padding-bottom: 40px;
+}
