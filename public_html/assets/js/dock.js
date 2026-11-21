@@ -284,23 +284,59 @@
 
   // macOS Dock magnification: with a mouse, icons grow towards the pointer. Only at the bottom: in the island
   // (Dock moved to the top) the apps keep their size and simply show their name on hover.
+  // macOS Dock magnification: with a mouse, the icons near it grow and the Dock grows with them. It grows on the
+  // side where the growing apps are (hovering an app on the left, it grows mostly to the right, and the other way
+  // round), so the app under the mouse stays where it is instead of the Dock growing evenly from its middle.
+  // Worked out from the resting layout, so it never chases its own movement.
   function apply() {
     frame = null;
     const top = root.getAttribute('data-dock') === 'top';
     const maxScale = 1.6;
     const range = 150;
+    const style = getComputedStyle(dock);
+    const size = parseFloat(getComputedStyle(root).getPropertyValue('--dock-size')) || 52;
+    const gap = parseFloat(style.columnGap) || parseFloat(style.gap) || 0;
+    const parts = Array.from(dock.querySelectorAll('.dock-item, .dock-separator')).filter(function (part) {
+      return part.offsetParent !== null;
+    });
 
-    items.forEach(function (item) {
+    // Where each part sits when nothing is zoomed
+    let x = parseFloat(style.paddingLeft) || 0;
+    const rest = parts.map(function (part) {
+      const partStyle = getComputedStyle(part);
+      const width = part.classList.contains('dock-item')
+        ? size
+        : part.offsetWidth + (parseFloat(partStyle.marginLeft) || 0) + (parseFloat(partStyle.marginRight) || 0);
+      const place = {part: part, left: x, width: width};
+      x += width + gap;
+      return place;
+    });
+    const restWidth = x - gap + (parseFloat(style.paddingRight) || 0) + 2 * (parseFloat(style.borderLeftWidth) || 0);
+    const restLeft = window.innerWidth / 2 - restWidth / 2;
+    const pointer = pointerX === null || top ? null : pointerX - restLeft - (parseFloat(style.borderLeftWidth) || 0);
+    let total = 0;
+    let leftOfPointer = 0;
+
+    rest.forEach(function (place) {
       let scale = 1;
 
       // The Move to top / bottom button never grows: on hover it only shows its name
-      if (pointerX !== null && !top && !item.classList.contains('dock-toggle')) {
-        const box = item.getBoundingClientRect();
-        const distance = Math.abs(pointerX - (box.left + box.width / 2));
+      if (pointer !== null && place.part.classList.contains('dock-item') && !place.part.classList.contains('dock-toggle')) {
+        const distance = Math.abs(pointer - (place.left + place.width / 2));
         scale = 1 + (maxScale - 1) * Math.cos(Math.min(distance / range, 1) * Math.PI / 2);
       }
-      item.style.setProperty('--dock-scale', scale.toFixed(3));
+      if (place.part.classList.contains('dock-item')) {
+        place.part.style.setProperty('--dock-scale', scale.toFixed(3));
+      }
+      const extra = place.width * (scale - 1);
+      total += extra;
+
+      if (pointer !== null) {
+        leftOfPointer += extra * Math.min(1, Math.max(0, (pointer - place.left) / place.width));
+      }
     });
+    // A centred Dock grows evenly on both sides; shifting it by this keeps the app under the mouse in place
+    dock.style.setProperty('--dock-offset', (pointer === null ? 0 : total / 2 - leftOfPointer).toFixed(1) + 'px');
   }
 
   function schedule() {
