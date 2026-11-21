@@ -401,8 +401,9 @@ html.island-hosting #nav .dock {
         transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
     }
 
-    /* Only full pages make the Dock leave; with a small link bubble it stays where it is */
-    html.preview-locked.preview-page body > .dock {
+    /* Full pages and the search make the Dock leave; with a small link bubble it stays where it is */
+    html.preview-locked.preview-page body > .dock,
+    html.preview-locked.preview-search body > .dock {
         opacity: 0;
         pointer-events: none;
         transform: translateX(-50%) translateY(calc(100% + 40px));
@@ -540,5 +541,42 @@ html.island-widening #nav.nav.is-compact {
 
     .preview-where.is-switching {
         animation: none;
+    }
+}
+
+/* Loading: until the page in the panel has loaded, the panel beats softly in blue, like a heartbeat (two quick
+   beats, then a rest), instead of showing the app that was open before */
+.preview-body::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: radial-gradient(70% 55% at 50% 42%, rgba(59, 130, 246, 0.42), rgba(59, 130, 246, 0) 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.preview.is-loading.is-open .preview-body::after {
+    animation: preview-heartbeat 1.3s ease-in-out infinite;
+}
+
+@keyframes preview-heartbeat {
+    0% { opacity: 0.15; }
+    14% { opacity: 1; }
+    28% { opacity: 0.35; }
+    42% { opacity: 0.85; }
+    70% { opacity: 0.15; }
+    100% { opacity: 0.15; }
+}
+
+html[data-theme="light"] .preview-body::after {
+    background: radial-gradient(70% 55% at 50% 42%, rgba(37, 99, 235, 0.36), rgba(37, 99, 235, 0) 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preview.is-loading.is-open .preview-body::after {
+        animation: none;
+        opacity: 0.5;
     }
 }

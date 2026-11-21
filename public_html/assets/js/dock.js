@@ -70,11 +70,29 @@
 
   // Animated move: every icon flies from its old place to its new one, one after another (FLIP),
   // while the shelf fades in (moving to the bottom) or the icons settle into the island (moving to the top)
+  // While the Dock moves (and until the mouse moves again afterwards), no app shows its name: the icons fly past
+  // the pointer, which would otherwise count as hovering them
+  let quietTimer = null;
+
+  function quietLabels(duration) {
+    dock.classList.add('is-moving');
+    clearTimeout(quietTimer);
+    quietTimer = setTimeout(function () {
+      const wake = function () {
+        dock.classList.remove('is-moving');
+        document.removeEventListener('pointermove', wake);
+      };
+      document.addEventListener('pointermove', wake);
+    }, duration);
+  }
+
   function move(next) {
     if (reduceMotion.matches || typeof Element.prototype.animate !== 'function') {
+      quietLabels(0);
       place(next);
       return;
     }
+    quietLabels(620 + items.length * 32 + 80);
     const before = items.map(function (item) {
       return item.getBoundingClientRect();
     });
@@ -252,17 +270,19 @@
     buildPages();
   }
 
-  // macOS Dock magnification: with a mouse, icons grow towards the pointer
+  // macOS Dock magnification: with a mouse, icons grow towards the pointer. Only at the bottom: in the island
+  // (Dock moved to the top) the apps keep their size and simply show their name on hover.
   function apply() {
     frame = null;
     const top = root.getAttribute('data-dock') === 'top';
-    const maxScale = top ? 1.35 : 1.6;
-    const range = top ? 110 : 150;
+    const maxScale = 1.6;
+    const range = 150;
 
     items.forEach(function (item) {
       let scale = 1;
 
-      if (pointerX !== null) {
+      // The Move to top / bottom button never grows: on hover it only shows its name
+      if (pointerX !== null && !top && !item.classList.contains('dock-toggle')) {
         const box = item.getBoundingClientRect();
         const distance = Math.abs(pointerX - (box.left + box.width / 2));
         scale = 1 + (maxScale - 1) * Math.cos(Math.min(distance / range, 1) * Math.PI / 2);
@@ -281,7 +301,8 @@
     if (event.pointerType !== 'mouse' || !finePointer.matches || reduceMotion.matches || narrow.matches) {
       return;
     }
-    pointerX = event.clientX;
+    // On the Move to top / bottom button (or the line before it), the apps stay their normal size
+    pointerX = event.target.closest('.dock-toggle, .dock-separator') ? null : event.clientX;
     schedule();
   });
 

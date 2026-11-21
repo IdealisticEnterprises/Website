@@ -115,3 +115,48 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Each footer link starts with the icon of its app (the same tiles as the Dock and the search) */
+.footer-grid a.footer-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.footer-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 23% !important;
+    background: var(--tile);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.18);
+    transition: transform 0.25s ease;
+}
+
+.footer-icon svg {
+    width: 62%;
+    height: 62%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.footer-logo {
+    width: 60%;
+    height: 60%;
+    background: #ffffff;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
+}
+
+.footer-grid a.footer-link:hover .footer-icon {
+    transform: translateY(-1px);
+}

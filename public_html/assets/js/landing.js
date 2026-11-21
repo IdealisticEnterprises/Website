@@ -290,6 +290,66 @@
     };
   }
 
+  // Home: the letters of the big iDEALISTIC® rise towards the mouse as it passes over them (like the Dock),
+  // then settle back when it leaves. Mouse only, and not with reduced motion.
+  const homeBrand = document.querySelector('.home-brand .brand-word');
+
+  if (homeBrand && !reduceMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    Array.from(homeBrand.childNodes).forEach(function (node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const letters = document.createDocumentFragment();
+        Array.from(node.textContent).forEach(function (character) {
+          const letter = document.createElement('span');
+          letter.className = 'home-letter';
+          letter.textContent = character;
+          letters.appendChild(letter);
+        });
+        homeBrand.replaceChild(letters, node);
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        node.classList.add('home-letter');
+      }
+    });
+    const letters = Array.from(homeBrand.querySelectorAll('.home-letter'));
+    const heading = homeBrand.closest('.home-brand');
+    heading.setAttribute('aria-label', homeBrand.textContent);
+    let pointer = null;
+    let letterFrame = null;
+
+    const lift = function () {
+      letterFrame = null;
+      const size = parseFloat(getComputedStyle(heading).fontSize) || 100;
+      const range = size * 1.1;
+
+      letters.forEach(function (letter) {
+        if (pointer === null) {
+          letter.style.transform = '';
+          return;
+        }
+        const box = letter.getBoundingClientRect();
+        const distance = Math.abs(pointer - (box.left + box.width / 2));
+        const near = Math.cos(Math.min(distance / range, 1) * Math.PI / 2);
+        letter.style.transform = near > 0.01
+          ? 'translateY(' + (-0.12 * near).toFixed(3) + 'em) scale(' + (1 + 0.045 * near).toFixed(3) + ')'
+          : '';
+      });
+    };
+    const soon = function () {
+      if (letterFrame === null) {
+        letterFrame = requestAnimationFrame(lift);
+      }
+    };
+    heading.addEventListener('pointermove', function (event) {
+      if (event.pointerType === 'mouse') {
+        pointer = event.clientX;
+        soon();
+      }
+    });
+    heading.addEventListener('pointerleave', function () {
+      pointer = null;
+      soon();
+    });
+  }
+
   // Home: the platforms doremi.chat is coming to, one after another, over and over
   document.querySelectorAll('[data-rotate]').forEach(function (rotator) {
     const items = Array.from(rotator.children);

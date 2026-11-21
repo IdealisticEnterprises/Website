@@ -5,6 +5,19 @@
   // Marks that JavaScript runs: buttons that only work with it (theme, Dock position) are hidden otherwise
   document.documentElement.classList.add('js');
 
+  // Arriving from another whole page that faded out (browsers without page cross-fades, see preview.js): fade in
+  try {
+    if (sessionStorage.getItem('page-fade') === '1') {
+      sessionStorage.removeItem('page-fade');
+      document.documentElement.classList.add('page-entering');
+      setTimeout(function () {
+        document.documentElement.classList.remove('page-entering');
+      }, 400);
+    }
+  } catch (error) {
+    // No storage: the page simply appears
+  }
+
   // Shown inside the preview sheet of another page of this site: drop the island, Dock and footer
   if (window.self !== window.top) {
     document.documentElement.classList.add('embedded');

@@ -240,7 +240,13 @@
     // Wide screens with the Dock at the bottom: stop above it. Phones: the Dock leaves, so use the full height.
     const dockBox = dock && !narrowScreen && !document.documentElement.hasAttribute('data-dock')
       ? dock.getBoundingClientRect() : null;
-    const bottomEdge = dockBox ? dockBox.top - 14 : window.innerHeight - 16;
+    // Phones: the visible part of the screen, so the panel ends above the keyboard while it is open and grows
+    // back when it closes
+    const view = window.visualViewport;
+    // (a pinch zoom also shrinks the visible part, but the panel keeps its size then: only the keyboard counts)
+    const keyboardOnly = narrowScreen && view && view.scale < 1.01;
+    const visibleBottom = keyboardOnly ? view.offsetTop + view.height : window.innerHeight;
+    const bottomEdge = dockBox ? dockBox.top - 14 : visibleBottom - 16;
     let openH;
 
     if (sheet.classList.contains('is-page')) {
@@ -300,6 +306,23 @@
       measure();
     }
   });
+
+  // The phone keyboard opening and closing changes only the visible part of the screen (no window resize on
+  // iPhone): the open panel follows it
+  if (window.visualViewport) {
+    let viewFrame = null;
+    const followView = function () {
+      if (!isOpen || !sheet || viewFrame !== null) {
+        return;
+      }
+      viewFrame = requestAnimationFrame(function () {
+        viewFrame = null;
+        measure();
+      });
+    };
+    window.visualViewport.addEventListener('resize', followView);
+    window.visualViewport.addEventListener('scroll', followView);
+  }
 
   function setOpen(open, instant) {
     clearTimeout(hideTimer);
@@ -399,9 +422,9 @@
 
 
 
-  // Switching apps while the panel is open: the island stays and simply changes. The app that was open stays in
-  // place and fades out while the new one fades in over it (a page fades in once it has loaded, so there is never
-  // an empty panel in between). Opening and closing an app on its own keep their usual animation.
+  // Switching apps while the panel is open: the island stays and simply changes. The app that was open fades out
+  // at once; while the new page loads the panel beats softly in blue (a heartbeat), and the page fades in as soon
+  // as it has loaded. Opening and closing an app on its own keep their usual animation.
   function beginSwitch(body) {
     if (!isOpen || !body.children.length) {
       body.textContent = '';
@@ -412,6 +435,20 @@
       element.classList.remove('preview-entering', 'is-in');
       element.classList.add('preview-leaving');
     });
+    requestAnimationFrame(function () {
+      leaving.forEach(function (element) {
+        element.classList.add('is-gone');
+      });
+    });
+    setTimeout(function () {
+      leaving.forEach(function (element) {
+        // Unless it came back in the meantime (the search list is reused)
+        if (element.classList.contains('preview-leaving')) {
+          element.classList.remove('preview-leaving', 'is-gone');
+          element.remove();
+        }
+      });
+    }, reduceMotion.matches ? 0 : 380);
     // The title and address change with it
     const where = sheet.querySelector('.preview-where');
     where.classList.remove('is-switching');
@@ -433,18 +470,6 @@
       done = true;
       requestAnimationFrame(function () {
         entering.classList.add('is-in');
-        leaving.forEach(function (element) {
-          element.classList.add('is-gone');
-        });
-        setTimeout(function () {
-          leaving.forEach(function (element) {
-            // Unless it came back in the meantime (the search list is reused)
-            if (element.classList.contains('preview-leaving')) {
-              element.classList.remove('preview-leaving', 'is-gone');
-              element.remove();
-            }
-          });
-        }, reduceMotion.matches ? 0 : 380);
       });
     };
     // Never wait long for a slow page
@@ -473,8 +498,14 @@
     frame.title = 'Page';
     frame.src = url.href;
     const reveal = finishSwitch(leaving, frame);
+    // A soft blue heartbeat in the panel until the page has loaded
+    sheet.classList.add('is-loading');
     frame.addEventListener('load', function () {
       reveal();
+
+      if (frame.isConnected) {
+        sheet.classList.remove('is-loading');
+      }
 
       try {
         const inner = frame.contentWindow.location;
@@ -515,6 +546,7 @@
     // An app that lives elsewhere (Community) is still the open app: its Dock icon shows it, and tapping it closes it
     sheet.setAttribute('data-href', url.href);
     markDock(url.href);
+    sheet.classList.remove('is-loading');
     const body = sheet.querySelector('.preview-body');
     const leaving = beginSwitch(body);
 
@@ -566,6 +598,7 @@
       return;
     }
     leaveSearch();
+    sheet.classList.remove('is-loading');
     isOpen = false;
     document.documentElement.classList.remove('preview-page');
     setOpen(false, instant);
@@ -591,6 +624,9 @@
   // The app follows the finger while the island (brand and ✕) stays where it is, with its own glass back;
   // let go far enough, or flick, and the app flies off that way. Otherwise it springs back into the island.
   const touchScreen = window.matchMedia('(max-width: 820px)');
+
+  // Set by enableDrag: makes another area a handle to slide the panel away (the search row in the island)
+  let addDragZone = null;
 
   function enableDrag() {
     const panel = sheet.querySelector('.preview-sheet');
@@ -723,7 +759,7 @@
       }
     }
 
-    zones.forEach(function (target) {
+    function addZone(target) {
       if (!target) {
         return;
       }
@@ -738,7 +774,10 @@
           up(event);
         }
       });
-    });
+    }
+
+    zones.forEach(addZone);
+    addDragZone = addZone;
 
     // However the finger leaves (anywhere on screen, a cancelled touch, a lost event), the drag always ends
     ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'blur'].forEach(function (type) {
@@ -926,13 +965,14 @@
   });
 
   // ---------- Search in the island ----------
-  // Clicking the island (not its buttons or links) turns it into a search for the apps: the Dock's apps and the
-  // other pages that open as apps (FAQ, Advertisements, Work, AI). The results open in the panel, exactly like an
-  // app: the island grows down to hold them, the page behind blurs, and the theme button is the ✕. Choosing one
-  // turns the panel into that app. Not while an app is open, and not while the Dock sits in the island.
+  // Clicking the island (not its buttons or links) turns it into a search for everything: the Dock's apps first,
+  // then every link in the footer (other pages and products, the community, legal pages, the support email, the
+  // company records). The results open in the panel, exactly like an app: the island grows down to hold them, the
+  // page behind blurs, and the theme button is the ✕. Choosing one opens it like a click on it (an app turns the
+  // panel into that app). Not while an app is open, and not while the Dock sits in the island.
   const SEARCH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
   const EXTRA_ICONS = {
-    '/faq/': {tile: 'linear-gradient(180deg, #7cc8ff 0%, #2563eb 100%)', svg: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4"/><path d="M12 16.6v.1"/>'},
+    '/faq/': {tile: 'linear-gradient(180deg, #5eead4 0%, #0f9488 100%)', svg: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4"/><path d="M12 16.6v.1"/>'},
     '/ads/': {tile: 'linear-gradient(180deg, #6ee7d8 0%, #0d8f84 100%)', svg: '<path d="M9 9l11 4-4.8 1.6L13.6 19.5z"/><path d="M5.5 3.5l1.2 2.4M3 8l2.6.6M11.5 3.2l-.9 2.6"/>'},
     '/work/': {tile: 'linear-gradient(180deg, #a3aab5 0%, #4b5260 100%)', svg: '<rect x="3.5" y="7.5" width="17" height="12.5" rx="2.5"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5"/><path d="M3.5 12.5h17"/>'},
     '/ai/': {tile: 'linear-gradient(180deg, #c4b5fd 0%, #6d28d9 100%)', svg: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'}
@@ -955,6 +995,131 @@
   }
 
   // Everything that can be searched: the Dock's apps first, then the pages in the footer that open as apps
+  // Everyday words people may type for each place, so the search finds it even without its exact name.
+  // Keyed by the page's path, the email address, or the website's host.
+  const SEARCH_WORDS = {
+    '/doremi/': 'doremi chat chatbot bot assistant ai message messages messaging talk text whatsapp telegram messenger instagram discord coming soon product new',
+    '/club/': 'plans plan pricing price prices cost membership member premium subscription subscribe buy purchase pay payment upgrade plus pro vip red shop store tiers',
+    '/sales/': 'sale deals deal offer offers promo promotion promotions cheap bargain black friday cyber monday reduced',
+    '/discounts/': 'discount coupon coupons code codes voucher student students teacher school university nonprofit non profit charity open source creator youtuber streamer hardship cheaper reduced price request',
+    '/giveaways/': 'giveaway free win winner prize prizes contest competition raffle gift gifts lottery',
+    '/apps/': 'app application download install iphone ipad ios apple app store android google play store phone mobile tablet',
+    '/faq/': 'help faq questions question answers support how what why info information guide problem problems issue trouble',
+    '/email/': 'email mail contact message write support ticket help complaint feedback reach us customer service talk human report bug',
+    'mailto:human@idealistic.ai': 'email mail contact support human address write',
+    '/ads/': 'ads ad advertising advertisement advertise promote promotion sponsor sponsored marketing click',
+    '/work/': 'work job jobs career careers hiring hire apply application employment position positions vacancy vacancies team join recruit',
+    '/ai/': 'ai artificial intelligence robot machine learning gpt model how we use ai',
+    '/github': 'github code source source code open source repository repositories repo developer developers git',
+    '/terms/terms_of_use/': 'terms terms of use terms of service tos rules conditions agreement legal',
+    '/policies/privacy_policy/': 'privacy policy data personal data gdpr cookies tracking legal',
+    '/instructions/user_data_deletion/': 'delete deletion remove erase data account gdpr forget me right to be forgotten privacy legal',
+    'spartan.top': 'spartan anticheat anti cheat cheat cheating hack hacks hacker minecraft plugin server protection',
+    'vagdedes.com': 'community discord server people members forum join social chat creator friends',
+    'ariregister.rik.ee': 'company business register registry estonia estonian legal entity registration idealistic ou owner',
+    'euipo.europa.eu': 'trademark brand registered euipo eu europe legal'
+  };
+
+  // Lower case, no accents, punctuation as spaces: "Idealistic OÜ" matches "idealistic ou"
+  function plain(text) {
+    return String(text).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9@]+/g, ' ').trim();
+  }
+
+  // Up to one letter wrong, missing or extra (for words of 4 letters or more)
+  function nearlySame(a, b) {
+    if (Math.abs(a.length - b.length) > 1) {
+      return false;
+    }
+    let i = 0;
+    let j = 0;
+    let edits = 0;
+
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) {
+        i++;
+        j++;
+        continue;
+      }
+      if (++edits > 1) {
+        return false;
+      }
+      if (a.length > b.length) {
+        i++;
+      } else if (a.length < b.length) {
+        j++;
+      } else {
+        i++;
+        j++;
+      }
+    }
+    return edits + (a.length - i) + (b.length - j) <= 1;
+  }
+
+  // How well an item matches what was typed: 0 is no match, higher is better. Every typed word must match.
+  function score(item, query) {
+    const typed = plain(query).split(' ').filter(Boolean);
+    const name = plain(item.label);
+
+    if (!typed.length) {
+      return 1;
+    }
+    if (name.indexOf(typed.join(' ')) === 0) {
+      return 100;
+    }
+    let total = 0;
+
+    for (let k = 0; k < typed.length; k++) {
+      const word = typed[k];
+      let best = 0;
+
+      if (name.split(' ').some(function (part) { return part.indexOf(word) === 0; })) {
+        best = 60;
+      } else if (name.indexOf(word) !== -1) {
+        best = 45;
+      } else if (item.terms.some(function (term) { return term.indexOf(word) === 0; })) {
+        best = 30;
+      } else if (word.length >= 3 && item.text.indexOf(word) !== -1) {
+        best = 20;
+      } else if (word.length >= 4 && item.terms.some(function (term) { return nearlySame(word, term); })) {
+        best = 10;
+      }
+      if (!best) {
+        return 0;
+      }
+      total += best;
+    }
+    return total / typed.length;
+  }
+
+  const DOC_ICON = '<path d="M7 3.5h7l4 4v13H7z"/><path d="M14 3.5v4h4"/><path d="M9.5 12h6M9.5 15.5h6"/>';
+  const MAIL_ICON = '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7.5 8 5.5 8-5.5"/>';
+
+  function footerIcon(url) {
+    if (url.protocol === 'mailto:') {
+      return {tile: 'linear-gradient(180deg, #7cc8ff 0%, #2f7cf6 100%)', svg: MAIL_ICON};
+    }
+    const key = appKey(url);
+
+    if (EXTRA_ICONS[key]) {
+      return EXTRA_ICONS[key];
+    }
+    const service = serviceFor(url);
+
+    if (service) {
+      return {tile: service.tile, logo: service.logo, glyph: service.glyph};
+    }
+    if (isStandalone(url)) {
+      return {tile: 'linear-gradient(180deg, #a3aab5 0%, #4b5260 100%)', svg: DOC_ICON};
+    }
+    return {tile: '', svg: ''};
+  }
+
+  function extraWords(key, url) {
+    const host = url.hostname ? url.hostname.replace(/^www\./, '') : '';
+    return SEARCH_WORDS[key] || SEARCH_WORDS[url.href] || SEARCH_WORDS[host] || '';
+  }
+
   function collectApps() {
     const items = [];
     const seen = {};
@@ -967,21 +1132,32 @@
       } catch (error) {
         return;
       }
-      const key = appKey(url);
+      const key = url.protocol === 'mailto:' ? url.href : appKey(url);
 
-      if (seen[key] || isStandalone(url)) {
+      if (seen[key] || !label) {
         return;
       }
       seen[key] = true;
       const host = url.hostname.replace(/^www\./, '');
+      const service = url.protocol === 'mailto:' ? null : serviceFor(url);
       const aliases = Object.keys(OWN_DOMAINS).filter(function (domain) {
         return OWN_DOMAINS[domain] === key;
       });
+      let place = host;
+
+      if (url.protocol === 'mailto:') {
+        place = 'Email';
+      } else if (service) {
+        place = service.host;
+      } else if (url.origin === location.origin) {
+        place = PAGE_DOMAIN[url.pathname] || host + url.pathname.replace(/\/$/, '');
+      }
       items.push({
         href: url.href,
         label: label,
-        place: url.origin === location.origin ? (PAGE_DOMAIN[url.pathname] || host + url.pathname) : host,
-        words: [label, host].concat(aliases).join(' ').toLowerCase(),
+        place: place,
+        text: plain([label, place].concat(aliases, [extraWords(key, url)]).join(' ')),
+        terms: plain([label, place].concat(aliases, [extraWords(key, url)]).join(' ')).split(' '),
         icon: icon
       });
     }
@@ -993,6 +1169,8 @@
         svg: svg ? svg.innerHTML : ''
       });
     });
+    // Then every other link in the footer (other products, the community, legal pages, support email, company
+    // records), each with a fitting icon
     document.querySelectorAll('.footer a[href]').forEach(function (link) {
       let url;
 
@@ -1001,15 +1179,17 @@
       } catch (error) {
         return;
       }
-      const host = url.hostname.replace(/^www\./, '');
-      const own = Object.prototype.hasOwnProperty.call(OWN_DOMAINS, host) && OWN_DOMAINS[host];
-      const page = url.origin === location.origin && isPage(url);
-
-      if (!own && !page) {
+      if (link.classList.contains('brand-i') || link.classList.contains('brand-r')
+        || ['http:', 'https:', 'mailto:'].indexOf(url.protocol) === -1) {
         return;
       }
-      const key = appKey(url);
-      add(link.href, link.textContent.trim(), EXTRA_ICONS[key] || {tile: '', svg: ''});
+      // The link's name, without the icon in front of it
+      const name = Array.from(link.childNodes).filter(function (node) {
+        return !(node.classList && node.classList.contains('footer-icon'));
+      }).map(function (node) {
+        return node.textContent;
+      }).join('').trim();
+      add(link.href, name, footerIcon(url));
     });
     return items;
   }
@@ -1033,6 +1213,10 @@
       ' role="combobox" aria-expanded="true" aria-controls="island-results" aria-autocomplete="list">';
     searchInput = searchForm.querySelector('input');
     searchNav.insertBefore(searchForm, searchNav.querySelector('.theme-toggle'));
+    // Phones: the search row is the handle to slide the search away in any direction, like an app's title bar
+    if (addDragZone) {
+      addDragZone(searchForm);
+    }
 
     searchList = document.createElement('div');
     searchList.className = 'island-results';
@@ -1063,6 +1247,12 @@
         openResult(searchShown[searchActive]);
       }
     });
+    searchList.addEventListener('scroll', blurEdgesSoon, {passive: true});
+    window.addEventListener('resize', blurEdgesSoon);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', blurEdgesSoon);
+    }
     searchList.addEventListener('mousedown', function (event) {
       event.preventDefault(); // keep the field focused while choosing
     });
@@ -1085,20 +1275,17 @@
   }
 
   function renderResults() {
-    const query = searchInput.value.trim().toLowerCase();
-    const starts = [];
-    const contains = [];
-
-    searchItems.forEach(function (item) {
-      if (!query) {
-        starts.push(item);
-      } else if (item.label.toLowerCase().indexOf(query) === 0) {
-        starts.push(item);
-      } else if (item.words.indexOf(query) !== -1) {
-        contains.push(item);
-      }
+    const query = searchInput.value;
+    // Best matches first; equal ones keep their usual order (the Dock's apps first)
+    searchShown = searchItems.map(function (item, index) {
+      return {item: item, index: index, score: score(item, query)};
+    }).filter(function (entry) {
+      return entry.score > 0;
+    }).sort(function (a, b) {
+      return b.score - a.score || a.index - b.index;
+    }).map(function (entry) {
+      return entry.item;
     });
-    searchShown = starts.concat(contains);
     searchList.textContent = '';
 
     if (!searchShown.length) {
@@ -1121,10 +1308,15 @@
       if (item.icon.tile) {
         tile.style.background = item.icon.tile;
       }
-      if (item.icon.svg) {
+      if (item.icon.logo) {
+        const logo = document.createElement('span');
+        logo.className = 'island-result-logo';
+        logo.style.setProperty('--logo', 'url(/assets/img/brands/' + item.icon.logo + '.svg)');
+        tile.appendChild(logo);
+      } else if (item.icon.svg) {
         tile.innerHTML = '<svg viewBox="0 0 24 24">' + item.icon.svg + '</svg>';
       } else {
-        tile.textContent = item.label.charAt(0);
+        tile.textContent = item.icon.glyph || item.label.charAt(0);
       }
       const text = document.createElement('span');
       text.className = 'island-result-text';
@@ -1139,6 +1331,40 @@
       searchList.appendChild(row);
     });
     markActive(true);
+    blurEdgesSoon();
+  }
+
+  // Apps only partly in view at the top or bottom of the list are blurred, more the further out they are (like the
+  // apps peeking in at the edges of the phone Dock), so it is clear there is more to scroll to
+  let edgeFrame = null;
+
+  function blurEdges() {
+    if (!searchList || !searchList.isConnected) {
+      return;
+    }
+    const box = searchList.getBoundingClientRect();
+    searchList.querySelectorAll('.island-result').forEach(function (row) {
+      const r = row.getBoundingClientRect();
+      const outside = Math.max(0, box.top - r.top) + Math.max(0, r.bottom - box.bottom);
+      const amount = r.height ? Math.min(1, outside / (r.height * 0.75)) : 0;
+
+      if (amount > 0.01) {
+        row.classList.add('is-peek');
+        row.style.setProperty('--peek-amount', amount.toFixed(3));
+      } else {
+        row.classList.remove('is-peek');
+        row.style.removeProperty('--peek-amount');
+      }
+    });
+  }
+
+  function blurEdgesSoon() {
+    if (edgeFrame === null) {
+      edgeFrame = requestAnimationFrame(function () {
+        edgeFrame = null;
+        blurEdges();
+      });
+    }
   }
 
   // scroll: bring the highlighted app into view (keyboard), not when the pointer chose it
@@ -1171,7 +1397,7 @@
     renderResults();
 
     // The panel holds the results, like an app: no title bar, the field is in the island's own row
-    sheet.classList.remove('is-page');
+    sheet.classList.remove('is-page', 'is-loading');
     sheet.classList.add('is-search');
     sheet.querySelector('#preview-title').textContent = 'Search';
     sheet.querySelector('.preview-host').textContent = '';
@@ -1181,12 +1407,17 @@
     body.appendChild(searchList);
     markDock(null);
     searchNav.classList.add('is-searching');
+    // Phones: the Dock leaves while searching, like it does for an app (preview.css)
+    document.documentElement.classList.add('preview-search');
     show(null, false);
+    blurEdgesSoon();
     searchInput.focus({preventScroll: true});
   }
 
   // Back to a plain island (the panel closed, or it now shows the chosen app)
   function leaveSearch() {
+    document.documentElement.classList.remove('preview-search');
+
     if (sheet) {
       sheet.classList.remove('is-search');
     }
@@ -1203,6 +1434,15 @@
     if (!item) {
       return;
     }
+    // Close the keyboard first; the panel measures again as it goes (and once more after, to be sure)
+    searchInput.blur();
+    [350, 800].forEach(function (wait) {
+      setTimeout(function () {
+        if (isOpen && sheet.classList.contains('is-page')) {
+          measure();
+        }
+      }, wait);
+    });
     // Open it like a click on the app: the panel turns into it (or its card, for apps that live elsewhere)
     if (!route(item.href, null)) {
       close(false, true);
@@ -1216,6 +1456,45 @@
         return;
       }
       openSearch();
+    });
+  }
+
+  // Going to another whole page (a legal page and Home, both ways): browsers that cross-fade pages on their own
+  // (@view-transition in layout.css) need nothing; others fade this page out first, and the next one fades in
+  if (!EMBEDDED && !('CSSViewTransitionRule' in window)
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.addEventListener('click', function (event) {
+      const link = event.target.closest ? event.target.closest('a[href]') : null;
+
+      if (!link || event.defaultPrevented || event.button !== 0 || link.target === '_blank'
+        || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      let url;
+
+      try {
+        url = new URL(link.href, location.href);
+      } catch (error) {
+        return;
+      }
+      if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search)) {
+        return;
+      }
+      event.preventDefault();
+
+      try {
+        sessionStorage.setItem('page-fade', '1');
+      } catch (error) {
+        // Without storage the next page simply appears
+      }
+      document.documentElement.classList.add('page-leaving');
+      setTimeout(function () {
+        location.href = url.href;
+      }, 220);
+    });
+    // Coming back with the back button to a page that had faded out: show it again
+    window.addEventListener('pageshow', function () {
+      document.documentElement.classList.remove('page-leaving');
     });
   }
 

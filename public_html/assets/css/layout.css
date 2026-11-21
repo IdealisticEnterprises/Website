@@ -448,10 +448,18 @@ html[data-theme="light"] .home-where-link:focus-visible .home-rotator-item {
     white-space: nowrap;
 }
 
+/* The clipping box reaches 12px past the line on every side (taken back with a negative margin, so nothing moves),
+   so the icons' shadows fit inside it; its top and bottom edges fade, so a platform sliding in or out melts away
+   instead of being cut */
 .home-rotator {
     display: inline-grid;
+    box-sizing: content-box;
     height: 2em;
+    margin: -12px;
+    padding: 12px;
     overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
 }
 
 .home-rotator-item {
@@ -518,4 +526,51 @@ html[data-theme="light"] .home-where-link:focus-visible .home-rotator-item {
     .home-rotator-item.is-leaving {
         transform: none;
     }
+}
+
+/* ---------- Going between whole pages (a legal page ↔ Home, legal page ↔ legal page) ----------
+   Browsers that can cross-fade from one page to the next do it themselves (no JavaScript needed). Others fade the
+   page out and the next one in (prefs.js and preview.js add these classes). */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.35s;
+    animation-timing-function: ease;
+}
+
+html.page-leaving body {
+    opacity: 0;
+    transition: opacity 0.22s ease;
+}
+
+html.page-entering body {
+    animation: page-in 0.35s ease both;
+}
+
+@keyframes page-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition {
+        navigation: none;
+    }
+
+    html.page-leaving body,
+    html.page-entering body {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* Home: each letter of the big name can rise towards the mouse (landing.js); it springs back when it leaves */
+.home-letter {
+    display: inline-block;
+    transform-origin: 50% 85%;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

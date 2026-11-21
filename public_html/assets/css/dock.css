@@ -91,7 +91,7 @@ body {
 .dock-item[data-app="doremi"]    { --tile: linear-gradient(180deg, #6ef08a 0%, #1fb84b 100%); }
 .dock-item[data-app="club"]      { --tile: linear-gradient(180deg, #ffd66b 0%, #ff9500 100%); }
 .dock-item[data-app="apps"]      { --tile: linear-gradient(180deg, #d58cff 0%, #7b3cf2 100%); }
-.dock-item[data-app="community"] { --tile: linear-gradient(180deg, #ff8aa5 0%, #ff2d55 100%); }
+.dock-item[data-app="faq"]       { --tile: linear-gradient(180deg, #5eead4 0%, #0f9488 100%); }
 .dock-item[data-app="work"]      { --tile: linear-gradient(180deg, #a3aab5 0%, #4b5260 100%); }
 .dock-item[data-app="sales"]     { --tile: linear-gradient(180deg, #ff9a8b 0%, #e5262f 100%); }
 .dock-item[data-app="discounts"] { --tile: linear-gradient(180deg, #c8f07a 0%, #4f9a12 100%); }
@@ -471,4 +471,10 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
         filter: blur(calc(var(--peek-amount, 1) * 3px));
         opacity: calc(1 - var(--peek-amount, 1) * 0.4);
     }
+}
+
+/* While the Dock moves between the bottom and the island, the apps' names stay hidden (dock.js) */
+.dock.is-moving .dock-label {
+    opacity: 0 !important;
+    transition: none !important;
 }

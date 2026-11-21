@@ -230,14 +230,30 @@ html:not(.preview-locked) #nav.nav:not(.is-searching) .theme-toggle {
     overscroll-behavior: contain;
 }
 
-/* While searching, the field sits in the island's own row: no title bar, and the field takes clicks */
-.preview.is-search .preview-bar,
-.preview.is-search .preview-grab {
+/* Phones: the Dock leaves while searching, so the results can use the height down to the bottom of the screen */
+@media (max-width: 820px) {
+    .island-results {
+        max-height: calc(100vh - var(--island-top, 16px) - var(--island-h, 60px) - 56px);
+        max-height: calc(100dvh - var(--island-top, 16px) - var(--island-h, 60px) - 56px);
+    }
+}
+
+/* While searching, the field sits in the island's own row: no title bar, and the field takes clicks.
+   The grab handle stays: on phones the search slides away in any direction, like an app. */
+.preview.is-search .preview-bar {
     display: none;
 }
 
 html.island-hosting #nav .island-search {
     pointer-events: auto;
+}
+
+/* Phones: the search row is also the handle to slide the search away (preview.js), so the browser must not
+   scroll or zoom on it */
+@media (max-width: 820px) {
+    html.island-hosting #nav .island-search {
+        touch-action: none;
+    }
 }
 
 /* Each app's highlight is round like the island (concentric with the list's corners: 26px - 8px padding),
@@ -251,6 +267,13 @@ html.island-hosting #nav .island-search {
     color: var(--ink);
     cursor: pointer;
     transition: background 0.15s ease;
+}
+
+/* Partly out of view at the top or bottom of the list: blurred, more the further out (preview.js sets the amount).
+   No transition on the blur: it follows the scrolling exactly. */
+.island-result.is-peek {
+    filter: blur(calc(var(--peek-amount, 1) * 3px));
+    opacity: calc(1 - var(--peek-amount, 1) * 0.4);
 }
 
 .island-result.is-active {
@@ -278,6 +301,15 @@ html.island-hosting #nav .island-search {
     stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* Brand logos (GitHub, Discord, ...) in the results: painted white from the local SVG */
+.island-result-logo {
+    width: 56%;
+    height: 56%;
+    background: #ffffff;
+    -webkit-mask: var(--logo) center / contain no-repeat;
+    mask: var(--logo) center / contain no-repeat;
 }
 
 .island-result-text {
