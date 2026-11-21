@@ -4,8 +4,9 @@
   /* The shapes of Home are Home itself. There are none until an app opens: then whatever is on screen (the brand,
      its lines, the news; never the footer, the Dock or the island) breaks into random pieces that burst apart and
      keep floating in every direction behind the app (apps are see-through), like stars across the night sky. Pieces
-     bounce off the edges of the screen and off each other, breaking into smaller ones each time (until they are
-     small). Closing the app plays it all back quickly in reverse, a rewind, until Home is whole again.
+     bounce off the edges of the screen and off each other, breaking into smaller ones when they hit hard enough
+     (until they are small). Everything loses energy over time until it is still; then nothing moves or runs any
+     more. Closing the app plays it all back quickly in reverse, a rewind, until Home is whole again.
 
      Each piece is a copy of its block, cut to a polygon with clip-path (in the block's own coordinates), and moved
      with a transform around its middle, so putting it back is just going back to no transform. */
@@ -24,7 +25,17 @@
   let history = [];
   let lastShot = 0;
   let rewind = null;
-  const SHOT_EVERY = 50;
+  let shotEvery = 50;
+  // At most this many snapshots are kept: when full, every other one is dropped and they are taken half as often,
+  // so the rewind still covers everything with little memory
+  const MAX_SHOTS = 240;
+  // Energy: the pieces' cruising speed fades with time (ENERGY_TIME seconds to lose about two thirds of it). Hits
+  // slower than BREAK_SPEED (px/s) only bounce. Below STILL_SPEED and STILL_SPIN everything has come to rest.
+  const ENERGY_TIME = 4;
+  const BREAK_SPEED = 30;
+  const STILL_SPEED = 1.5;
+  const STILL_SPIN = 0.02;
+  let elapsed = 0;
 
   function random(min, max) {
     return min + Math.random() * (max - min);
@@ -188,11 +199,14 @@
     last = now;
     const width = window.innerWidth;
     const height = window.innerHeight;
+    elapsed += dt;
+    const energy = Math.exp(-elapsed / ENERGY_TIME);
 
     pieces.forEach(function (piece) {
-      // The burst slows down to the piece's own cruising speed, keeping its direction
+      // The burst slows down to the piece's own cruising speed, which itself fades as the energy runs out
       const speed = Math.hypot(piece.vx, piece.vy) || 1;
-      const target = piece.cruise + (speed - piece.cruise) * Math.pow(0.35, dt);
+      const cruise = piece.cruise * energy;
+      const target = cruise + (speed - cruise) * Math.pow(0.35, dt);
       piece.vx *= target / speed;
       piece.vy *= target / speed;
       piece.spin *= Math.pow(0.6, dt);
@@ -218,7 +232,7 @@
         piece.vy = -piece.vy;
         bounced = true;
       }
-      if (bounced && piece.calm <= 0) {
+      if (bounced && piece.calm <= 0 && Math.hypot(piece.vx, piece.vy) > BREAK_SPEED) {
         piece.calm = 0.5;
         split(piece);
       }
@@ -255,8 +269,11 @@
             }
             a.calm = 0.5;
             b.calm = 0.5;
-            split(a);
-            split(b);
+            // Only a hard enough hit breaks them
+            if (-along > BREAK_SPEED) {
+              split(a);
+              split(b);
+            }
             hit = true;
           }
         }
@@ -265,9 +282,21 @@
 
     pieces.forEach(place);
 
-    if (now - lastShot >= SHOT_EVERY) {
+    if (now - lastShot >= shotEvery) {
       lastShot = now;
       snapshot();
+    }
+
+    // Everything at rest: keep the last picture and stop
+    const still = pieces.every(function (piece) {
+      return Math.hypot(piece.vx, piece.vy) < STILL_SPEED && Math.abs(piece.spin) < STILL_SPIN
+        && Math.abs(piece.opacity - 0.4) < 0.01;
+    });
+
+    if (still) {
+      snapshot();
+      frame = null;
+      return;
     }
     frame = window.requestAnimationFrame(step);
   }
@@ -283,6 +312,13 @@
       state[i * 4 + 3] = piece.alive ? piece.opacity : -1;
     });
     history.push(state);
+
+    if (history.length > MAX_SHOTS) {
+      history = history.filter(function (shot, i) {
+        return i % 2 === 0 || i === history.length - 1;
+      });
+      shotEvery *= 2;
+    }
   }
 
   function show(state) {
@@ -336,6 +372,8 @@
     made = [];
     history = [];
     lastShot = 0;
+    shotEvery = 50;
+    elapsed = 0;
     if (layer) {
       layer.remove();
     }
