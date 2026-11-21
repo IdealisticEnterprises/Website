@@ -652,3 +652,139 @@ html.page-entering body {
 .home-news {
     padding-bottom: 40px;
 }
+
+/* The footer is glass on Home: the pieces of Home floating behind it (while an app is open) turn soft */
+body:has(.home-hero) .footer {
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+}
+
+/* "The company behind doremi.chat.": the name is a link to the app */
+.home-line-app {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* Opening an app breaks what is on screen of Home into pieces (drift.js) that float behind it: the real brand,
+   lines and news hide meanwhile, and come back once the pieces are back together (the footer stays) */
+html.home-broken main .home-center,
+html.home-broken main .home-news > .wrap {
+    visibility: hidden;
+}
+
+.home-shards {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.home-shards > .home-shard {
+    position: absolute !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    box-sizing: border-box;
+    visibility: visible;
+    will-change: transform, opacity;
+}
+
+/* ---------- Our reply address (Gmail) only sends replies: a hint over it says so, without taking any space.
+   It shows on hover, focus or tap, and once by itself when the Email forms open (contact.js). ---------- */
+.reply-address {
+    position: relative;
+    cursor: help;
+    outline: none;
+}
+
+.reply-address::after {
+    content: attr(data-hint);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    z-index: 30;
+    width: max-content;
+    max-width: min(300px, calc(100vw - 32px));
+    padding: 8px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(20, 22, 28, 0.96);
+    color: #e6ebf2;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.45;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.reply-address.hint-up::after {
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform: translateY(4px);
+}
+
+.reply-address:hover::after,
+.reply-address:focus::after,
+.reply-address.is-hinting::after {
+    opacity: 1;
+    transform: none;
+}
+
+html[data-theme="light"] .reply-address::after {
+    border-color: rgba(15, 20, 30, 0.12);
+    background: rgba(250, 251, 253, 0.97);
+    color: #334155;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+
+/* In the Email forms the hint sits under the Replies row, across it */
+.compose-field:has(.compose-reply) {
+    position: relative;
+}
+
+.compose-reply .reply-address {
+    position: static;
+}
+
+.compose-reply .reply-address::after {
+    left: 92px;
+    top: calc(100% + 6px);
+    max-width: 360px;
+}
+
+@media (max-width: 640px) {
+    .compose-reply .reply-address::after {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reply-address::after {
+        transition: none;
+    }
+}
+
+/* The footer does not break when an app opens: it stays behind it, blurred twice (its own blur here and the app's
+   glass), so it never competes with the app's text */
+body:has(.home-hero) > .footer {
+    transition: filter 0.45s ease;
+}
+
+html.preview-locked body:has(.home-hero) > .footer {
+    filter: blur(6px);
+}

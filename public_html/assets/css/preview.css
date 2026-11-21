@@ -580,3 +580,17 @@ html[data-theme="light"] .preview-body::after {
         opacity: 0.5;
     }
 }
+
+/* ---------- Apps are see-through: no background of their own, only a light blur over Home, so its shapes
+   (and their collisions) still show behind them ---------- */
+.preview .preview-backdrop,
+html[data-theme] .preview .preview-backdrop {
+    background: transparent;
+    -webkit-backdrop-filter: blur(5px) saturate(130%);
+    backdrop-filter: blur(5px) saturate(130%);
+}
+
+.preview .preview-sheet,
+html[data-theme] .preview .preview-sheet {
+    background: transparent;
+}

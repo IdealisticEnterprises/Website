@@ -10,12 +10,13 @@ routes = [
 ]
 
 [vars]
-TO_ADDRESS = "human@idealistic.ai"
+# The inbox that receives every ticket and request (the email's To: shows the ticket's own random address)
+TO_ADDRESS = "idealistic.enterprises@gmail.com"
 # Must be on a domain with Cloudflare Email Routing turned on
 FROM_ADDRESS = "contact@idealistic.enterprises"
 ALLOWED_ORIGINS = "https://idealistic.enterprises"
 
-# Cloudflare Email Routing: human@idealistic.ai must be a verified destination address
+# Cloudflare Email Routing: TO_ADDRESS must be a verified destination address
 [[send_email]]
 name = "CONTACT_EMAIL"
-destination_address = "human@idealistic.ai"
+destination_address = "idealistic.enterprises@gmail.com"

@@ -25,12 +25,12 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="/assets/css/landing.css?v=c1b6830671">
     <link rel="stylesheet" href="/assets/css/footer.css?v=a9e717fe1d">
-    <link rel="stylesheet" href="/assets/css/contact.css?v=362b3de348">
-    <link rel="stylesheet" href="/assets/css/island.css?v=89d44274d9">
+    <link rel="stylesheet" href="/assets/css/contact.css?v=48f74d2acd">
+    <link rel="stylesheet" href="/assets/css/island.css?v=91d8224380">
     <link rel="stylesheet" href="/assets/css/dock.css?v=0ef79e8f93">
     <link rel="stylesheet" href="/assets/css/brand.css?v=1a7a882567">
-    <link rel="stylesheet" href="/assets/css/layout.css?v=55191a0988">
-    <link rel="stylesheet" href="/assets/css/preview.css?v=42664dc8e3">
+    <link rel="stylesheet" href="/assets/css/layout.css?v=9e2bbdd19f">
+    <link rel="stylesheet" href="/assets/css/preview.css?v=38b4fb8bf0">
     <link rel="stylesheet" href="/assets/css/performance.css?v=c849848a2f">
     <link rel="stylesheet" href="/assets/css/theme.css?v=2736079291">
     <script data-cfasync="false" src="/assets/js/prefs.js?v=b7ab112489"></script>
@@ -50,7 +50,6 @@
             <p class="eyebrow">JavaScript required</p>
             <h1>Please turn on JavaScript.</h1>
             <p><span class="brand-word"><a class="brand-i" href="https://ariregister.rik.ee/eng/company/17320016/Idealistic-OÜ" rel="noopener" title="Idealistic OÜ, Estonian Business Register">i</a>DEALISTIC<a class="brand-r" href="https://euipo.europa.eu/eSearch/#details/trademarks/019353308" rel="noopener" title="EU trademark no. 019353308">®</a></span> needs JavaScript to work. Turn it on in your browser settings, then reload this page.</p>
-            <p>Questions? Write to <a href="mailto:human@idealistic.ai">human@idealistic.ai</a>.</p>
         </div>
     </div>
 </noscript>
@@ -77,15 +76,15 @@
 
 <main id="main" class="compose-page">
 
-    <form class="compose" id="contact-form" action="/api/contact" method="post" data-sitekey="1x00000000000000000000AA" data-form="discount" novalidate>
-        <div class="compose-field">
+    <form class="compose" id="contact-form" action="/api/contact" method="post" data-sitekey="1x00000000000000000000AA" data-reply="idealistic.enterprises@gmail.com" data-form="discount" novalidate>
+        <div class="compose-field compose-ticket">
             <span class="compose-label">To:</span>
-            <span class="compose-to">human@idealistic.ai</span>
+            <span class="compose-address"><span class="compose-local" data-local aria-live="off"></span><span class="compose-at">@</span><span class="compose-domain" data-domain>idealistic.discount</span></span><input type="hidden" name="domain" value="idealistic.discount">
             <svg class="compose-lock" viewBox="0 0 24 24" aria-label="Fixed recipient"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <div class="compose-field">
             <span class="compose-label">Subject:</span>
-            <span class="compose-fixed">Discount request (uuid: <span class="compose-uuid" data-uuid></span>)</span>
+            <span class="compose-fixed">Discount request</span>
             <svg class="compose-lock" viewBox="0 0 24 24" aria-label="Fixed subject"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <div class="compose-field">
@@ -99,6 +98,11 @@
         <div class="compose-field">
             <label class="compose-label" for="contact-email">From:</label>
             <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="your@email.com" required>
+        </div>
+        <div class="compose-field">
+            <span class="compose-label">Replies:</span>
+            <span class="compose-fixed compose-reply">We always reply from <span class="compose-to reply-address" tabindex="0" data-hint="Replies only. Emails sent to this address are ignored: write to us on one of our own domains, which keep everything organised." data-hint-intro>idealistic.enterprises@gmail.com</span></span>
+            <svg class="compose-lock" viewBox="0 0 24 24" aria-label="Fixed reply address"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <label class="visually-hidden" for="contact-message">Message</label>
         <div class="compose-write">
@@ -123,8 +127,8 @@
         <div class="footer-grid">
             <div>
                 <span class="brand"><span class="brand-word"><a class="brand-i" href="https://ariregister.rik.ee/eng/company/17320016/Idealistic-OÜ" rel="noopener" title="Idealistic OÜ, Estonian Business Register">i</a>DEALISTIC<a class="brand-r" href="https://euipo.europa.eu/eSearch/#details/trademarks/019353308" rel="noopener" title="EU trademark no. 019353308">®</a></span></span>
-                <p>Support: <a href="mailto:human@idealistic.ai">human@idealistic.ai</a><br>
-                    <small>Support is answered by humans, so delays may apply.</small></p>
+                <p>Support: <a href="https://idealistic.email">open a ticket in Email</a><br>
+                    <small>We always reply from <span class="reply-address hint-up" tabindex="0" data-hint="Replies only. Emails sent to this address are ignored: write to us on one of our own domains, which keep everything organised.">idealistic.enterprises@gmail.com</span>. Support is answered by humans, so delays may apply.</small></p>
             </div>
             <div>
                 <h4>Products</h4>
@@ -160,9 +164,9 @@
     </div>
 </footer>
 <script data-cfasync="false" src="/assets/js/landing.js?v=f49326ebd6" defer></script>
-<script data-cfasync="false" src="/assets/js/island.js?v=989c7f5a7d" defer></script>
+<script data-cfasync="false" src="/assets/js/island.js?v=c602d7b26e" defer></script>
 <script data-cfasync="false" src="/assets/js/dock.js?v=6a7b8aa737" defer></script>
-<script data-cfasync="false" src="/assets/js/preview.js?v=3669e212de" defer></script>
-<script data-cfasync="false" src="/assets/js/contact.js?v=2b7e1c0625" defer></script>
+<script data-cfasync="false" src="/assets/js/preview.js?v=8427167a01" defer></script>
+<script data-cfasync="false" src="/assets/js/contact.js?v=bf8a14f2f3" defer></script>
 </body>
 </html>

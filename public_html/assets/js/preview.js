@@ -70,9 +70,10 @@
     '/faq/': 'idealistic.help'
   };
 
-  // Our support address: on the site it opens the Email app (a support ticket), not the mail program.
+  // Email addresses that open the Email app (a support ticket) instead of the mail program, as
+  // {'address': 'https://idealistic.email'}. None right now: support tickets get their own random address there.
   // The links stay ordinary email links, so they still work without JavaScript.
-  const EMAIL_APP = {'human@idealistic.ai': 'https://idealistic.email'};
+  const EMAIL_APP = {};
 
   function emailApp(url) {
     return url.protocol === 'mailto:' ? EMAIL_APP[decodeURIComponent(url.pathname).toLowerCase()] || null : null;
@@ -183,6 +184,12 @@
     window.addEventListener('hashchange', tellAddress);
     window.addEventListener('popstate', tellAddress);
     return;
+  }
+
+  // Opening an app adds a history step and closing it goes back; the browser must not move the page then
+  // (it restored an old scroll position, leaving Home scrolled down to the footer)
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
   }
 
   window.addEventListener('message', function (event) {
@@ -1075,7 +1082,7 @@
     '/giveaways/': 'giveaway free win winner prize prizes contest competition raffle gift gifts lottery',
     '/apps/': 'app application download install iphone ipad ios apple app store android google play store phone mobile tablet',
     '/faq/': 'help faq questions question answers support how what why info information guide problem problems issue trouble',
-    '/email/': 'email mail contact message write support ticket help complaint feedback reach us customer service talk human report bug human@idealistic.ai address',
+    '/email/': 'email mail contact message write support ticket help complaint feedback reach us customer service talk human report bug address ticket address domain reply gmail idealistic.enterprises@gmail.com',
     '/ads/': 'ads ad advertising advertisement advertise promote promotion sponsor sponsored marketing click',
     '/work/': 'work job jobs career careers hiring hire apply application employment position positions vacancy vacancies team join recruit',
     '/ai/': 'ai artificial intelligence robot machine learning gpt model how we use ai',

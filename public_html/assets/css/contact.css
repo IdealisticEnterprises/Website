@@ -426,3 +426,193 @@ html[data-theme="dark"] .compose-field select {
         font-size: 16px;
     }
 }
+
+/* ---------- To: the ticket's own random address (a new one on every keystroke), locked, on the department's domain ---------- */
+.compose-address {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    color: var(--blue-soft);
+    font-size: 0.95rem;
+}
+
+html[data-theme="light"] .compose-address {
+    color: #2563eb;
+}
+
+/* Fixed-width letters, so the address does not jump around while it changes */
+.compose-local {
+    flex: none;
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    letter-spacing: 0.01em;
+}
+
+.compose-at {
+    flex: none;
+    margin: 0 1px;
+}
+
+.compose-domain {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Replies: the one address we answer from, muted beside the label, blue like the recipient */
+.compose-reply {
+    color: var(--muted);
+}
+
+.compose-reply .compose-to {
+    flex: none;
+    overflow-wrap: anywhere;
+}
+
+/* ---------- Subject (Email form): the department, picked from a list ---------- */
+.compose-subject {
+    position: relative;
+}
+
+.compose-domain-pick {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+}
+
+.compose-picker {
+    display: flex;
+    flex: 1;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 12px 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.compose-picker:focus-visible {
+    outline: 2px solid var(--blue-soft);
+    outline-offset: 2px;
+}
+
+.compose-picker-name {
+    flex: none;
+}
+
+.compose-picker-desc {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compose-picker .compose-chevron {
+    align-self: center;
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.compose-picker[aria-expanded="true"] .compose-chevron {
+    transform: rotate(180deg);
+}
+
+/* The list: one row per department, with what it handles beside it */
+.compose-menu {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 92px;
+    z-index: 20;
+    width: min(420px, calc(100% - 108px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--line);
+    background: rgba(20, 22, 28, 0.97);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+}
+
+.compose-menu:not([hidden]) {
+    animation: compose-menu-in 0.18s ease;
+}
+
+@keyframes compose-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+.compose-menu:focus {
+    outline: none;
+}
+
+.compose-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
+    padding: 11px 14px 11px 16px;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+
+.compose-option + .compose-option {
+    border-top: 1px solid var(--line);
+}
+
+.compose-option.is-active {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.compose-option[aria-selected="true"] {
+    border-left-color: var(--blue-soft);
+}
+
+.compose-option-name {
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.compose-option-desc {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+html[data-theme="light"] .compose-menu {
+    background: rgba(250, 251, 253, 0.98);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme="light"] .compose-option.is-active {
+    background: rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .compose-option[aria-selected="true"] {
+    border-left-color: #2563eb;
+}
+
+@media (max-width: 640px) {
+    .compose-menu {
+        left: 12px;
+        width: calc(100% - 24px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .compose-menu:not([hidden]) {
+        animation: none;
+    }
+}

@@ -2,8 +2,9 @@
   'use strict';
 
   /* Email forms (Support ticket, Discount request): Cloudflare Turnstile check, then POST to /api/contact
-     (the contact Worker, see /workers/contact). Both have a locked subject that ends in a random ID, made
-     here; the Worker checks it and builds the subject itself. */
+     (the contact Worker, see /workers/contact). Each message goes to its own random address: a new one is made on
+     every keystroke (and on every change), so the one that is sent is whichever was showing at a random moment.
+     The visitor picks its domain; every address on those domains reaches us. The subject is locked. */
 
   const form = document.getElementById('contact-form');
 
@@ -18,30 +19,219 @@
   let token = '';
   let widget = null;
   const kind = form.getAttribute('data-form') || 'contact';
-  const uuidField = form.querySelector('[data-uuid]');
-  let requestId = '';
+  const localField = form.querySelector('[data-local]');
+  const domainField = form.elements.domain;
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const LENGTH = 12; // must match LOCAL_PATTERN in the Worker
+  let local = '';
 
-  // A random version 4 UUID (crypto.randomUUID needs a secure page; the fallback builds the same format)
-  function newId() {
-    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-      return window.crypto.randomUUID();
+  // A random local part: 12 letters and digits from the browser's secure random numbers (no bias: values past
+  // the last full set of 36 are drawn again)
+  function newLocal() {
+    let text = '';
+
+    while (text.length < LENGTH) {
+      const bytes = window.crypto.getRandomValues(new Uint8Array(LENGTH * 2));
+
+      for (let i = 0; i < bytes.length && text.length < LENGTH; i++) {
+        if (bytes[i] < 252) {
+          text += LETTERS[bytes[i] % 36];
+        }
+      }
     }
-    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    const hex = Array.prototype.map.call(bytes, function (byte) {
-      return byte.toString(16).padStart(2, '0');
-    }).join('');
-    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+    return text;
   }
 
-  function nextId() {
-    if (uuidField) {
-      requestId = newId();
-      uuidField.textContent = requestId;
+  function address() {
+    return local + '@' + domainField.value;
+  }
+
+  /* Subject (Email form): the department, from a list built from the (hidden) <select>, which still holds the
+     value, so form.reset() and the request work as before. The locked To address follows it. The Discount
+     request form has no list: its department is fixed. */
+  const domainLabel = form.querySelector('[data-domain]');
+  const listed = domainField.tagName === 'SELECT';
+  const picker = document.createElement('button');
+  const pickerName = document.createElement('span');
+  const pickerDesc = document.createElement('span');
+  const menu = document.createElement('div');
+  const items = [];
+  let active = -1;
+
+  if (listed) {
+    const row = domainField.closest('.compose-field');
+    const wrap = domainField.parentNode;
+
+    picker.type = 'button';
+    picker.className = 'compose-picker';
+    picker.id = 'ticket-subject';
+    picker.setAttribute('aria-haspopup', 'listbox');
+    picker.setAttribute('aria-expanded', 'false');
+    pickerName.className = 'compose-picker-name';
+    pickerDesc.className = 'compose-picker-desc';
+    picker.append(pickerName, pickerDesc, wrap.querySelector('.compose-chevron'));
+    menu.className = 'compose-menu';
+    menu.id = 'ticket-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.setAttribute('aria-label', 'Subject');
+    menu.hidden = true;
+    picker.setAttribute('aria-controls', menu.id);
+
+    Array.prototype.forEach.call(domainField.options, function (option, index) {
+      const item = document.createElement('div');
+      const name = document.createElement('span');
+      const desc = document.createElement('span');
+
+      item.className = 'compose-option';
+      item.id = 'ticket-option-' + index;
+      item.setAttribute('role', 'option');
+      name.className = 'compose-option-name';
+      name.textContent = option.getAttribute('data-department');
+      desc.className = 'compose-option-desc';
+      desc.textContent = option.getAttribute('data-description');
+      item.append(name, desc);
+      item.addEventListener('click', function () {
+        choose(index);
+      });
+      item.addEventListener('pointermove', function () {
+        focusItem(index, false);
+      });
+      menu.appendChild(item);
+      items.push(item);
+    });
+    domainField.hidden = true;
+    domainField.tabIndex = -1;
+    row.querySelector('label').setAttribute('for', picker.id);
+    wrap.appendChild(picker);
+    row.appendChild(menu);
+  }
+
+  function showDomain() {
+    domainLabel.textContent = domainField.value;
+
+    if (!listed) {
+      return;
+    }
+    const option = domainField.options[domainField.selectedIndex];
+    pickerName.textContent = option.getAttribute('data-department');
+    pickerDesc.textContent = option.getAttribute('data-description');
+    items.forEach(function (item, index) {
+      item.setAttribute('aria-selected', index === domainField.selectedIndex ? 'true' : 'false');
+    });
+  }
+
+  function focusItem(index, scroll) {
+    active = Math.max(0, Math.min(items.length - 1, index));
+    items.forEach(function (item, i) {
+      item.classList.toggle('is-active', i === active);
+    });
+    menu.setAttribute('aria-activedescendant', items[active].id);
+    if (scroll) {
+      items[active].scrollIntoView({block: 'nearest'});
     }
   }
-  nextId();
+
+  function openMenu() {
+    if (!menu.hidden) {
+      return;
+    }
+    menu.hidden = false;
+    picker.setAttribute('aria-expanded', 'true');
+    // Never taller than the window below the row
+    const row = picker.closest('.compose-field').getBoundingClientRect();
+    menu.style.maxHeight = Math.max(160, window.innerHeight - row.bottom - 16) + 'px';
+    focusItem(domainField.selectedIndex, true);
+    menu.tabIndex = -1;
+    menu.focus({preventScroll: true});
+  }
+
+  function closeMenu(refocus) {
+    if (menu.hidden) {
+      return;
+    }
+    menu.hidden = true;
+    picker.setAttribute('aria-expanded', 'false');
+    if (refocus) {
+      picker.focus({preventScroll: true});
+    }
+  }
+
+  function choose(index) {
+    const changed = index !== domainField.selectedIndex;
+    domainField.selectedIndex = index;
+    closeMenu(true);
+    showDomain();
+    if (changed) {
+      domainField.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+  }
+
+  picker.addEventListener('click', function () {
+    if (menu.hidden) {
+      openMenu();
+    } else {
+      closeMenu(true);
+    }
+  });
+
+  picker.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      openMenu();
+    }
+  });
+
+  menu.addEventListener('keydown', function (event) {
+    const keys = {ArrowDown: active + 1, ArrowUp: active - 1, Home: 0, End: items.length - 1, PageDown: active + 5, PageUp: active - 5};
+
+    if (event.key in keys) {
+      event.preventDefault();
+      focusItem(keys[event.key], true);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      choose(active);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenu(true);
+    } else if (event.key === 'Tab') {
+      closeMenu(false);
+    }
+  });
+
+  // A tap or click anywhere else closes it
+  document.addEventListener('pointerdown', function (event) {
+    if (!menu.hidden && !menu.contains(event.target) && !picker.contains(event.target)) {
+      closeMenu(false);
+    }
+  });
+  window.addEventListener('blur', function () {
+    closeMenu(false);
+  });
+
+  function nextAddress() {
+    local = newLocal();
+    localField.textContent = local;
+    localField.parentNode.title = address();
+    showDomain();
+  }
+  nextAddress();
+
+  // The reply address only sends replies: show its hint once, a moment after the form opens, until the visitor
+  // starts writing (or for a few seconds); it shows again on hover, focus or tap
+  const intro = form.querySelector('[data-hint-intro]');
+
+  if (intro) {
+    const hideIntro = function () {
+      intro.classList.remove('is-hinting');
+    };
+    setTimeout(function () {
+      intro.classList.add('is-hinting');
+      setTimeout(hideIntro, 6000);
+    }, 700);
+    form.addEventListener('input', hideIntro);
+    form.addEventListener('pointerdown', hideIntro);
+  }
 
   function say(text, kind) {
     status.textContent = text;
@@ -128,13 +318,13 @@
       token: token
     };
 
-    data.uuid = requestId;
+    data.to = address();
 
     if (kind === 'discount') {
       data.product = form.elements.product.value;
       data.reason = form.elements.reason.value;
     }
-    const sentId = requestId;
+    const sentTo = address();
     submit.disabled = true;
     say('Sending…');
 
@@ -151,10 +341,9 @@
         form.reset();
         form.classList.add('is-sent');
 
-        // Keep the ID of this ticket or request in view; the next one gets a new ID
-        say('Sent. Your ' + (kind === 'discount' ? 'request' : 'ticket') + ' ID is ' + sentId
-          + '. A human will answer you by email.', 'ok');
-        nextId();
+        // Keep the address of this ticket or request in view (form.reset() put the domain back, so make a new one)
+        say('Sent to ' + sentTo + '. A human will reply from ' + form.getAttribute('data-reply') + '.', 'ok');
+        nextAddress();
       } else {
         say(result.error || 'Your message could not be sent. Please try again.', 'error');
       }
@@ -167,8 +356,11 @@
     });
   }
 
-  // Writing again after a sent message
-  form.addEventListener('input', function () {
+  // Every keystroke and every change makes a new address; writing again after a sent message clears the status
+  form.addEventListener('input', function (event) {
+    if (event.target !== form.elements.website) {
+      nextAddress();
+    }
     if (form.classList.contains('is-sent')) {
       form.classList.remove('is-sent');
       say('');

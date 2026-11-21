@@ -392,3 +392,12 @@ html[data-theme="light"] .island-result.is-active {
         font-size: 0.85rem;
     }
 }
+
+/* Holding the Dock (dock at the top, wide screens): once the page is scrolled the island shrinks as far as its
+   apps allow (--island-fit, from island.js), never wider than usual */
+@media (min-width: 821px) {
+    html[data-dock="top"] #nav.nav.is-compact {
+        width: min(var(--island-fit, var(--island-full)), var(--island-full));
+        padding: 9px 9px 9px 22px;
+    }
+}

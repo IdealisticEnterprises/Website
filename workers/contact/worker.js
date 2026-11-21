@@ -1,26 +1,51 @@
 // Contact form backend for idealistic.enterprises (Cloudflare Worker).
-// POST /api/contact with JSON {form, email, message, token, website} (name optional), plus:
-//   - form "contact" (the default, the Email page): uuid. The subject is locked: this Worker builds it as
-//     "Support ticket (uuid: <uuid>)";
-//   - form "discount": uuid, product and reason. The subject is locked too: "Discount request (uuid: <uuid>)".
+// POST /api/contact with JSON {form, to, email, message, token, website} (name optional), plus:
+//   - to: the ticket's own address, made at random in the browser: 12 letters and digits @ one of the domains in DEPARTMENTS (every
+//     address on them reaches us through Email Routing), each a department of the company. It is the email's To header and is in the subject;
+//   - form "contact" (the default, the Email page): the visitor picks the department as the subject (the address
+//     follows it), and this Worker builds the subject from it: "<department> (<to>)", e.g. "Billing (…@idealistic.shop)";
+//   - form "discount": product and reason, always to the Discounts department (idealistic.discount). The subject is
+//     locked: "Discount request (<to>)".
 //   Subjects are never taken from the page, so they cannot be changed there.
 //   1. checks the request comes from the site and the fields are valid,
 //   2. verifies the Cloudflare Turnstile token (secret: TURNSTILE_SECRET),
-//   3. sends the message to TO_ADDRESS through Cloudflare Email Routing (binding: CONTACT_EMAIL),
-//      with Reply-To set to the visitor, so replying in the mailbox answers them directly.
+//   3. delivers the message to the inbox TO_ADDRESS through Cloudflare Email Routing (binding: CONTACT_EMAIL),
+//      with To: set to the ticket's address and Reply-To set to the visitor, so replying answers them directly.
 
 import { EmailMessage } from "cloudflare:email";
 
 const LIMITS = { name: 100, email: 254, subject: 150, message: 5000 };
 const EMAIL_PATTERN = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const LOCAL_PATTERN = /^[a-z0-9]{12}$/;
 
-// Must match SUPPORT_TITLE in the site generator (the Email page)
-const SUPPORT = { title: "Support ticket" };
+// The domains the forms offer, each a department of the company. Must match TICKET_DOMAINS in the site generator.
+const DEPARTMENTS = {
+  "idealistic.email": "Support",
+  "idealistic.help": "Help",
+  "doremi.chat": "doremi.chat",
+  "idealistic.app": "Apps",
+  "idealistic.download": "Downloads",
+  "idealistic.club": "Membership",
+  "idealistic.shop": "Billing",
+  "idealistic.sale": "Sales",
+  "idealistic.discount": "Discounts",
+  "idealistic.gives": "Giveaways",
+  "idealistic.click": "Advertising",
+  "idealistic.business": "Partnerships",
+  "idealistic.news": "Press",
+  "idealistic.work": "Careers",
+  "idealistic.ai": "AI",
+  "idealistic.trade": "Trademark",
+  "idealistic.company": "Legal",
+  "idealistic.enterprises": "Management",
+  "idealistic.contact": "Reception",
+};
+
 
 // Must match DISCOUNT_* in the site generator (the choices on the Discount request form)
 const DISCOUNT = {
   title: "Discount request",
+  domain: "idealistic.discount",
   products: ["doremi.chat", "Spartan AntiCheat"],
   reasons: ["Student", "Teacher or school", "Non-profit organisation", "Open-source project", "Content creator", "Financial hardship", "Other"],
 };
@@ -58,25 +83,30 @@ export default {
     const name = clean(data.name);
     const email = clean(data.email);
     const kind = data.form === "discount" ? "discount" : "contact";
-    const uuid = clean(data.uuid).toLowerCase();
+    const to = clean(data.to).toLowerCase();
+    const at = to.indexOf("@");
+    const department = DEPARTMENTS[to.slice(at + 1)] || "";
     let subject = "";
     let details = [];
 
-    if (!UUID_PATTERN.test(uuid)) {
+    if (at < 0 || !LOCAL_PATTERN.test(to.slice(0, at)) || !Object.prototype.hasOwnProperty.call(DEPARTMENTS, to.slice(at + 1))) {
       return reply(400, "The form is out of date. Please reload the page and try again.", cors);
     }
     if (kind === "contact") {
-      subject = `${SUPPORT.title} (uuid: ${uuid})`;
-      details = [`Ticket ID: ${uuid}`, ""];
+      subject = `${department} (${to})`;
+      details = [`Department: ${department}`, `Ticket address: ${to}`, ""];
     } else {
       const product = clean(data.product);
       const reason = clean(data.reason);
 
+      if (to.slice(at + 1) !== DISCOUNT.domain) {
+        return reply(400, "The form is out of date. Please reload the page and try again.", cors);
+      }
       if (!DISCOUNT.products.includes(product) || !DISCOUNT.reasons.includes(reason)) {
         return reply(400, "Please choose a product and a reason, then try again.", cors);
       }
-      subject = `${DISCOUNT.title} (uuid: ${uuid})`;
-      details = [`Product: ${product}`, `Reason: ${reason}`, `Request ID: ${uuid}`, ""];
+      subject = `${DISCOUNT.title} (${to})`;
+      details = [`Department: ${department}`, `Product: ${product}`, `Reason: ${reason}`, `Request address: ${to}`, ""];
     }
     const message = typeof data.message === "string" ? data.message.replace(/\r\n?/g, "\n").trim() : "";
     const token = typeof data.token === "string" ? data.token : "";
@@ -130,7 +160,7 @@ export default {
 
     const raw = [
       `From: ${encodeWords(kind === "discount" ? "iDEALISTIC discount request" : "iDEALISTIC support ticket")} <${env.FROM_ADDRESS}>`,
-      `To: <${env.TO_ADDRESS}>`,
+      `To: <${to}>`,
       name ? `Reply-To: ${encodeWords(name)} <${email}>` : `Reply-To: <${email}>`,
       `Subject: ${encodeWords(subject)}`,
       `Date: ${new Date().toUTCString()}`,
@@ -145,7 +175,7 @@ export default {
     try {
       await env.CONTACT_EMAIL.send(new EmailMessage(env.FROM_ADDRESS, env.TO_ADDRESS, raw));
     } catch (error) {
-      return reply(502, "Your message could not be sent right now. Please try again, or write to " + env.TO_ADDRESS + ".", cors);
+      return reply(502, "Your message could not be sent right now. Please try again in a few minutes.", cors);
     }
     return reply(200, null, cors);
   },
