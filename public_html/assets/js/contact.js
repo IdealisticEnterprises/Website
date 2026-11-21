@@ -1,9 +1,9 @@
 (function () {
   'use strict';
 
-  /* Email forms (Contact, Discount request): Cloudflare Turnstile check, then POST to /api/contact
-     (the contact Worker, see /workers/contact). A form with data-form="discount" has a locked subject that
-     ends in a random request ID, made here; the Worker checks it and builds the subject itself. */
+  /* Email forms (Support ticket, Discount request): Cloudflare Turnstile check, then POST to /api/contact
+     (the contact Worker, see /workers/contact). Both have a locked subject that ends in a random ID, made
+     here; the Worker checks it and builds the subject itself. */
 
   const form = document.getElementById('contact-form');
 
@@ -128,12 +128,11 @@
       token: token
     };
 
+    data.uuid = requestId;
+
     if (kind === 'discount') {
-      data.uuid = requestId;
       data.product = form.elements.product.value;
       data.reason = form.elements.reason.value;
-    } else {
-      data.subject = form.elements.subject.value;
     }
     const sentId = requestId;
     submit.disabled = true;
@@ -152,13 +151,10 @@
         form.reset();
         form.classList.add('is-sent');
 
-        if (kind === 'discount') {
-          // Keep the ID of this request in view; the next request gets a new one
-          say('Sent. Your request ID is ' + sentId + '. A human will answer you by email.', 'ok');
-          nextId();
-        } else {
-          say('Sent. A human will answer you by email.', 'ok');
-        }
+        // Keep the ID of this ticket or request in view; the next one gets a new ID
+        say('Sent. Your ' + (kind === 'discount' ? 'request' : 'ticket') + ' ID is ' + sentId
+          + '. A human will answer you by email.', 'ok');
+        nextId();
       } else {
         say(result.error || 'Your message could not be sent. Please try again.', 'error');
       }

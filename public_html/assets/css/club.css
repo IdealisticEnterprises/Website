@@ -92,3 +92,8 @@
 .plan-group + .plan-group {
     padding-top: 40px;
 }
+
+/* A plan can be picked by clicking it, like the picker above */
+.plans .plan[id] {
+    cursor: pointer;
+}

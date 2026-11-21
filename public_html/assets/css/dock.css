@@ -96,7 +96,6 @@ body {
 .dock-item[data-app="sales"]     { --tile: linear-gradient(180deg, #ff9a8b 0%, #e5262f 100%); }
 .dock-item[data-app="discounts"] { --tile: linear-gradient(180deg, #c8f07a 0%, #4f9a12 100%); }
 .dock-item[data-app="giveaways"] { --tile: linear-gradient(180deg, #f5a3ff 0%, #b5179e 100%); }
-.dock-item[data-app="news"]      { --tile: linear-gradient(180deg, #9aa2ff 0%, #4338ca 100%); }
 .dock-item[data-app="ads"]       { --tile: linear-gradient(180deg, #6ee7d8 0%, #0d8f84 100%); }
 
 /* Running-app dot under the current page */
@@ -435,6 +434,13 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
     /* The apps are links (<a>); the last one is the last <a> in the track */
     .dock-track > a.dock-item:last-of-type {
         scroll-snap-align: end;
+    }
+
+    /* One swipe moves one page at most: a quick swipe back from the last page stops on the middle one
+       instead of flying past it to the first */
+    .dock .dock-item:nth-child(4n + 1),
+    .dock-track > a.dock-item:last-of-type {
+        scroll-snap-stop: always;
     }
 }
 

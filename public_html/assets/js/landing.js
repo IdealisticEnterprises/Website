@@ -115,9 +115,23 @@
       return;
     }
     event.preventDefault();
+
+    // The plan picker: pressing the plan that is already picked unselects it
+    if (link.closest('.plan-picker') && link.getAttribute('aria-current') === 'true') {
+      pickPlan('');
+      return;
+    }
     smoothScrollTo(Math.max(0, target.getBoundingClientRect().top + window.scrollY - 88));
-    history.pushState(null, '', url.hash);
+    // Inside the panel, replace the address instead of adding a history step: closing the panel goes back in
+    // history, and must not land on the previous plan instead
+    if (window.self !== window.top) {
+      history.replaceState(null, '', url.hash);
+    } else {
+      history.pushState(null, '', url.hash);
+    }
     highlightPlan();
+    // Inside the panel, the page around this one shows the new address (e.g. /club/#pro) so it can be shared
+    window.dispatchEvent(new Event('urlchange'));
   });
 
   const plans = Array.from(document.querySelectorAll('.plan[id]'));
@@ -148,6 +162,42 @@
   if (plans.length) {
     window.addEventListener('hashchange', highlightPlan);
     highlightPlan();
+
+    // Clicking a plan picks it, like the picker above (highlighted, and its address #pro, ... set); clicking it
+    // again unselects it, and so does clicking anywhere else on the page
+    document.addEventListener('click', function (event) {
+      const selection = window.getSelection ? String(window.getSelection()) : '';
+
+      if (event.defaultPrevented || event.button !== 0 || selection || event.target.closest('.plan-picker')) {
+        return;
+      }
+      const plan = event.target.closest('.plans .plan[id]');
+
+      if (!plan) {
+        if (document.querySelector('.plans .plan.is-highlighted')) {
+          pickPlan('');
+        }
+        return;
+      }
+      if (event.target.closest('a, button, input, select, textarea')) {
+        return;
+      }
+      pickPlan(plan.classList.contains('is-highlighted') ? '' : plan.id);
+    });
+  }
+
+  // Pick a plan (its id), or none (''): the highlight, and the address (#pro, ... or none) so it can be shared.
+  // Inside the panel the address is replaced, not added, so closing the panel never steps back to a plan.
+  function pickPlan(id) {
+    const address = id ? '#' + id : window.location.pathname + window.location.search;
+
+    if (window.self !== window.top) {
+      history.replaceState(null, '', address);
+    } else {
+      history.pushState(null, '', address);
+    }
+    highlightPlan();
+    window.dispatchEvent(new Event('urlchange'));
   }
 
   document.querySelectorAll('[data-tabs]').forEach(function (root) {

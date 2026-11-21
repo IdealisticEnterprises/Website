@@ -9,6 +9,20 @@ ErrorDocument 403 /403/index.html
 ErrorDocument 404 /404/index.html
 ErrorDocument 500 /500/index.html
 
+# Legal pages (terms, policies, instructions) are never kept in a cache: not by browsers, not by Cloudflare.
+# Every visit gets the version on the server, so a change to them is seen at once.
+<IfModule mod_headers.c>
+    <If "%{REQUEST_URI} =~ m#^/(terms|policies|instructions)(/|$)#">
+        Header always set Cache-Control "no-store, max-age=0"
+        Header always set CDN-Cache-Control "no-store"
+        Header always set Cloudflare-CDN-Cache-Control "no-store"
+        Header always set Pragma "no-cache"
+        Header always set Expires "0"
+        Header unset ETag
+        Header unset Last-Modified
+    </If>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
@@ -24,15 +38,14 @@ ErrorDocument 500 /500/index.html
     RewriteRule ^downloadable/?$ /apps/ [R=301,L]
 
     # Each domain can simply be sent by Cloudflare to /<its name>: these lead on to its page
-    #   .click, .gives, .discount, .sale, .help / .contact (.email is /email itself), .shop
-    # Announcements used to be /announcements: they are News now
+    #   .click, .gives, .discount, .sale, .help (the FAQ), .contact (.email is /email itself), .shop
     # The email page used to be /contact: old links lead on to /email
-    RewriteRule ^announcements/?$ /news/ [R=301,L]
     RewriteRule ^click/?$ /ads/ [R=301,L]
     RewriteRule ^gives/?$ /giveaways/ [R=301,L]
     RewriteRule ^discount/?$ /discounts/ [R=301,L]
     RewriteRule ^sale/?$ /sales/ [R=301,L]
-    RewriteRule ^(help|contact)/?$ /email/ [R=301,L]
+    RewriteRule ^help/?$ /faq/ [R=301,L]
+    RewriteRule ^contact/?$ /email/ [R=301,L]
     RewriteRule ^shop/?$ /club/ [R=301,L]
 
     # Terms of Service and Terms of Use are the same terms

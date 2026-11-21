@@ -141,3 +141,25 @@ html[data-theme="light"] .app-logo-tip span {
 html[data-theme="light"] .app-logo-tip {
     background: rgba(240, 244, 250, 0.93);
 }
+
+/* Compact cards (doremi.chat's messaging apps): the logo with the platform's name beside it, then the button */
+.app-card-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.app-card-head h3 {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.app-card-compact .actions {
+    padding-top: 22px;
+}
+
+/* Not available yet (doremi.chat coming soon): the logo is not a link */
+span.app-logo {
+    cursor: default;
+}

@@ -1,8 +1,9 @@
 // Contact form backend for idealistic.enterprises (Cloudflare Worker).
 // POST /api/contact with JSON {form, email, message, token, website} (name optional), plus:
-//   - form "contact" (the default): subject, written by the visitor;
-//   - form "discount": uuid, product and reason. The subject is locked: this Worker builds it as
-//     "Discount request (uuid: <uuid>)", so it cannot be changed from the page.
+//   - form "contact" (the default, the Email page): uuid. The subject is locked: this Worker builds it as
+//     "Support ticket (uuid: <uuid>)";
+//   - form "discount": uuid, product and reason. The subject is locked too: "Discount request (uuid: <uuid>)".
+//   Subjects are never taken from the page, so they cannot be changed there.
 //   1. checks the request comes from the site and the fields are valid,
 //   2. verifies the Cloudflare Turnstile token (secret: TURNSTILE_SECRET),
 //   3. sends the message to TO_ADDRESS through Cloudflare Email Routing (binding: CONTACT_EMAIL),
@@ -13,6 +14,9 @@ import { EmailMessage } from "cloudflare:email";
 const LIMITS = { name: 100, email: 254, subject: 150, message: 5000 };
 const EMAIL_PATTERN = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+// Must match SUPPORT_TITLE in the site generator (the Email page)
+const SUPPORT = { title: "Support ticket" };
 
 // Must match DISCOUNT_* in the site generator (the choices on the Discount request form)
 const DISCOUNT = {
@@ -54,15 +58,21 @@ export default {
     const name = clean(data.name);
     const email = clean(data.email);
     const kind = data.form === "discount" ? "discount" : "contact";
-    let subject = clean(data.subject);
+    const uuid = clean(data.uuid).toLowerCase();
+    let subject = "";
     let details = [];
 
-    if (kind === "discount") {
-      const uuid = clean(data.uuid).toLowerCase();
+    if (!UUID_PATTERN.test(uuid)) {
+      return reply(400, "The form is out of date. Please reload the page and try again.", cors);
+    }
+    if (kind === "contact") {
+      subject = `${SUPPORT.title} (uuid: ${uuid})`;
+      details = [`Ticket ID: ${uuid}`, ""];
+    } else {
       const product = clean(data.product);
       const reason = clean(data.reason);
 
-      if (!UUID_PATTERN.test(uuid) || !DISCOUNT.products.includes(product) || !DISCOUNT.reasons.includes(reason)) {
+      if (!DISCOUNT.products.includes(product) || !DISCOUNT.reasons.includes(reason)) {
         return reply(400, "Please choose a product and a reason, then try again.", cors);
       }
       subject = `${DISCOUNT.title} (uuid: ${uuid})`;
@@ -114,12 +124,12 @@ export default {
       message,
       "",
       "--",
-      `Sent with the ${kind === "discount" ? "discount request" : "contact"} form on idealistic.enterprises (country: ${country}).`,
+      `Sent with the ${kind === "discount" ? "discount request" : "support ticket"} form on idealistic.enterprises (country: ${country}).`,
       "Reply to this email to answer the sender.",
     ].join("\n");
 
     const raw = [
-      `From: ${encodeWords(kind === "discount" ? "iDEALISTIC discount request" : "iDEALISTIC contact form")} <${env.FROM_ADDRESS}>`,
+      `From: ${encodeWords(kind === "discount" ? "iDEALISTIC discount request" : "iDEALISTIC support ticket")} <${env.FROM_ADDRESS}>`,
       `To: <${env.TO_ADDRESS}>`,
       name ? `Reply-To: ${encodeWords(name)} <${email}>` : `Reply-To: <${email}>`,
       `Subject: ${encodeWords(subject)}`,

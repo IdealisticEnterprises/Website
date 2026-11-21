@@ -391,8 +391,7 @@ html.island-hosting #nav .dock {
 }
 
 /* ---------- Phones and portrait tablets: slide to close ---------- */
-.preview-grab,
-.preview-hint {
+.preview-grab {
     display: none;
 }
 
@@ -437,36 +436,6 @@ html.island-hosting #nav .dock {
 
     .preview-bar {
         touch-action: none;
-    }
-
-    /* The hint: shown under the island each time a page opens, then it fades away */
-    .preview-hint {
-        position: absolute;
-        top: calc(var(--island-h, 60px) + 10px);
-        left: 50%;
-        z-index: 3;
-        display: block;
-        padding: 7px 12px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(20, 22, 28, 0.93);
-        color: #e6e9ef;
-        font-size: 0.8rem;
-        white-space: nowrap;
-        pointer-events: none;
-        opacity: 0;
-        transform: translate(-50%, -4px);
-        transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-
-    .preview.show-hint.is-open .preview-hint {
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-
-    html[data-theme="light"] .preview-hint {
-        border-color: rgba(30, 45, 75, 0.1);
-        background: rgba(240, 244, 250, 0.93);
-        color: var(--ink);
     }
 }
 

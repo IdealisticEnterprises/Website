@@ -13,16 +13,17 @@
     ios: {name: 'App Store', host: 'apps.apple.com', text: 'iDEALISTIC® for iPhone and iPad.', logo: 'appstore', tile: 'linear-gradient(180deg, #6cc6ff, #1677ff)', glyph: 'A'},
     ipados: 'ios',
     android: {name: 'Google Play', host: 'play.google.com', text: 'iDEALISTIC® for Android phones and tablets.', logo: 'googleplay', tile: 'linear-gradient(180deg, #6ef08a, #1fb84b)', glyph: '▶'},
-    whatsapp: {name: 'WhatsApp', host: 'wa.me', text: 'Use iDEALISTIC® in WhatsApp.', logo: 'whatsapp', tile: 'linear-gradient(180deg, #5ef08c, #19b34a)', glyph: 'W'},
-    telegram: {name: 'Telegram', host: 't.me', text: 'Use iDEALISTIC® in Telegram.', logo: 'telegram', tile: 'linear-gradient(180deg, #6fd0ff, #229ed9)', glyph: 'T'},
-    messenger: {name: 'Messenger', host: 'facebook.com', text: 'Use iDEALISTIC® in Messenger.', logo: 'messenger', tile: 'linear-gradient(180deg, #8f8cff, #0a7cff)', glyph: 'M'},
+    whatsapp: {name: 'WhatsApp', host: 'wa.me', text: 'Use doremi.chat in WhatsApp.', logo: 'whatsapp', tile: 'linear-gradient(180deg, #5ef08c, #19b34a)', glyph: 'W'},
+    telegram: {name: 'Telegram', host: 't.me', text: 'Use doremi.chat in Telegram.', logo: 'telegram', tile: 'linear-gradient(180deg, #6fd0ff, #229ed9)', glyph: 'T'},
+    messenger: {name: 'Messenger', host: 'facebook.com', text: 'Use doremi.chat in Messenger.', logo: 'messenger', tile: 'linear-gradient(180deg, #8f8cff, #0a7cff)', glyph: 'M'},
     facebook: 'messenger',
-    instagram: {name: 'Instagram', host: 'instagram.com', text: 'Use iDEALISTIC® in Instagram messages.', logo: 'instagram', tile: 'linear-gradient(180deg, #ffb36b, #e1306c 55%, #8a3ab9)', glyph: 'I'},
-    discord: {name: 'Discord', host: 'discord.com', text: 'Use iDEALISTIC® in Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
-    x: {name: 'X', host: 'x.com', text: 'Use iDEALISTIC® on X.', logo: 'x', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'X'},
+    instagram: {name: 'Instagram', host: 'instagram.com', text: 'Use doremi.chat in Instagram messages.', logo: 'instagram', tile: 'linear-gradient(180deg, #ffb36b, #e1306c 55%, #8a3ab9)', glyph: 'I'},
+    discord: {name: 'Discord', host: 'discord.com', text: 'Use doremi.chat in Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
+    x: {name: 'X', host: 'x.com', text: 'Use doremi.chat on X.', logo: 'x', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'X'},
     twitter: 'x',
-    // idealistic.community leads to our Discord server
-    'idealistic.community': {name: 'Community', host: 'idealistic.community', text: 'The iDEALISTIC® community, on Discord.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
+    // The community is the creator's Discord server at vagdedes.com (idealistic.community leads there too)
+    'vagdedes.com': {name: 'Community', host: 'vagdedes.com', text: 'The creator\'s Discord server, where the iDEALISTIC® community meets.', logo: 'discord', tile: 'linear-gradient(180deg, #8b93ff, #5865f2)', glyph: 'D'},
+    'idealistic.community': 'vagdedes.com',
     github: {name: 'GitHub', host: 'github.com', text: 'IdealisticEnterprises on GitHub.', logo: 'github', tile: 'linear-gradient(180deg, #4b5563, #111318)', glyph: 'G'},
     'spartan.top': {name: 'Spartan AntiCheat', host: 'spartan.top', text: 'Another product by Idealistic OÜ.', tile: 'linear-gradient(180deg, #ff8a6b, #d9381e)', glyph: 'S'},
     'ariregister.rik.ee': {name: 'Estonian Business Register', host: 'ariregister.rik.ee', text: 'The official company record of Idealistic OÜ.', tile: 'linear-gradient(180deg, #6cc6ff, #0b5cad)', glyph: 'E'},
@@ -42,7 +43,7 @@
     'idealistic.discount': '/discounts/',
     'idealistic.sale': '/sales/',
     'idealistic.email': '/email/',
-    'idealistic.help': '/email/',
+    'idealistic.help': '/faq/',
     'idealistic.contact': '/email/',
     'idealistic.shop': '/club/',
     'idealistic.enterprises': null
@@ -58,7 +59,8 @@
     '/giveaways/': 'idealistic.gives',
     '/discounts/': 'idealistic.discount',
     '/sales/': 'idealistic.sale',
-    '/email/': 'idealistic.email'
+    '/email/': 'idealistic.email',
+    '/faq/': 'idealistic.help'
   };
 
   const SHORT_LINK_HOSTS = ['idealistic.chat', 'idealistic.enterprises', location.hostname];
@@ -145,6 +147,15 @@
       event.preventDefault();
       window.parent.postMessage({type: 'preview-open', href: link.href}, location.origin);
     });
+
+    // The address of this page changed inside the panel (a plan picked on Club: #pro, ...): tell the page around
+    // it, which shows it in the browser bar, so the link can be shared
+    const tellAddress = function () {
+      window.parent.postMessage({type: 'preview-url', href: location.href}, location.origin);
+    };
+    window.addEventListener('urlchange', tellAddress);
+    window.addEventListener('hashchange', tellAddress);
+    window.addEventListener('popstate', tellAddress);
     return;
   }
 
@@ -153,6 +164,8 @@
       route(event.data.href, null);
     } else if (event.origin === location.origin && event.data && event.data.type === 'preview-close') {
       close();
+    } else if (event.origin === location.origin && event.data && event.data.type === 'preview-url') {
+      followAddress(event.data.href);
     }
   });
 
@@ -168,7 +181,6 @@
       '<section class="preview-sheet" role="dialog" aria-modal="true" aria-labelledby="preview-title">' +
       '  <div class="preview-grab" aria-hidden="true"><span></span></div>' +
       '  <div class="preview-island-space"></div>' +
-      '  <div class="preview-hint" aria-hidden="true">Slide in any direction to close</div>' +
       '  <header class="preview-bar">' +
       '    <div class="preview-where"><strong id="preview-title"></strong><span class="preview-host"></span></div>' +
       '  </header>' +
@@ -189,7 +201,6 @@
   let isOpen = false;
   let hideTimer = null;
   let widenTimer = null;
-  let hintTimer = null;
 
   // Only transform and opacity animate (graphics chip only), so it stays smooth on slow machines
   // Put the island and the shell back exactly as they were (no drag offsets, fully visible)
@@ -282,18 +293,6 @@
     }
   }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-dock']});
 
-  function showHint() {
-    // Shown on every page opened on a touch screen (a link bubble is small and the hint would cover it)
-    if (!touchScreen.matches || !sheet.classList.contains('is-page')) {
-      return;
-    }
-    sheet.classList.add('show-hint');
-    clearTimeout(hintTimer);
-    hintTimer = setTimeout(function () {
-      sheet.classList.remove('show-hint');
-    }, 2800);
-  }
-
   window.addEventListener('resize', function () {
     if (isOpen) {
       measure();
@@ -324,7 +323,6 @@
         requestAnimationFrame(function () {
           sheet.classList.add('is-open');
         });
-        showHint();
       };
 
       // A shortened island first widens to full length (keeping its glass), then grows down into the app
@@ -382,12 +380,14 @@
   }
 
 
-  // The Dock's dot follows the page that is open in the panel (none while Home is showing)
+  // The Dock's dot follows the page that is open in the panel (none while Home is showing). pathname is a page
+  // of this site (/club/), or the full address of an app that lives elsewhere (Community: https://vagdedes.com/)
   function markDock(pathname) {
     document.querySelectorAll('.dock .dock-item[href]').forEach(function (item) {
       const path = item.getAttribute('data-path') || new URL(item.href, location.href).pathname;
+      const full = new URL(path, location.href).href;
 
-      if (pathname && path === pathname) {
+      if (pathname && (path === pathname || full === pathname)) {
         item.setAttribute('aria-current', 'page');
       } else {
         item.removeAttribute('aria-current');
@@ -452,7 +452,9 @@
     const info = service || {name: host, host: host, text: 'An external website.', tile: 'linear-gradient(180deg, #6b7280, #374151)', glyph: '↗'};
     sheet.querySelector('#preview-title').textContent = info.name;
     sheet.querySelector('.preview-host').textContent = display;
-    markDock(null);
+    // An app that lives elsewhere (Community) is still the open app: its Dock icon shows it, and tapping it closes it
+    sheet.setAttribute('data-href', url.href);
+    markDock(url.href);
     const body = sheet.querySelector('.preview-body');
     body.textContent = '';
 
@@ -745,8 +747,41 @@
       openPage(url, display, false);
       return true;
     }
+    // Clicking the outside app that is already open (Community in the Dock) closes it, like any other app
+    if (isOpen && !sheet.classList.contains('is-page') && sheet.getAttribute('data-href') === url.href) {
+      close();
+      return true;
+    }
     openExternal(href, url, serviceFor(url), display);
     return true;
+  }
+
+  // A page in the panel changed its own address (#pro on Club, ...): show it in the browser bar and the panel's bar
+  function followAddress(href) {
+    let url;
+
+    try {
+      url = new URL(href);
+    } catch (error) {
+      return;
+    }
+    if (!isOpen || !sheet || !sheet.classList.contains('is-page') || url.origin !== location.origin) {
+      return;
+    }
+    const frame = sheet.querySelector('.preview-body iframe');
+
+    // Only the page that is open right now may change the address
+    try {
+      if (!frame || frame.contentWindow.location.href !== url.href) {
+        return;
+      }
+    } catch (error) {
+      return;
+    }
+    if (historyEntry) {
+      history.replaceState({preview: true}, '', url.pathname + url.search + url.hash);
+    }
+    sheet.querySelector('.preview-host').textContent = shown(url);
   }
 
   // While an app is open, the island's theme button is its ✕
@@ -778,7 +813,7 @@
     }
     clearTimeout(hideTimer);
     clearTimeout(widenTimer);
-    sheet.classList.remove('is-open', 'show-hint');
+    sheet.classList.remove('is-open');
     sheet.hidden = true;
     sheet.querySelector('.preview-body').textContent = '';
     document.documentElement.classList.remove('island-hosting', 'island-widening', 'preview-locked', 'preview-page');
@@ -841,5 +876,293 @@
       history.replaceState(null, '', '/');
       openPage(target, shown(target), false);
     }
+  }
+  // ---------- Search in the island ----------
+  // Clicking the island (not its buttons or links) turns it into a search for the apps: the Dock's apps and the
+  // other pages that open as apps (FAQ, Advertisements, Work, AI). Not while an app is open, and not while the
+  // Dock itself sits in the island (moved to the top on wide screens).
+  const SEARCH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
+  const EXTRA_ICONS = {
+    '/faq/': {tile: 'linear-gradient(180deg, #7cc8ff 0%, #2563eb 100%)', svg: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4"/><path d="M12 16.6v.1"/>'},
+    '/ads/': {tile: 'linear-gradient(180deg, #6ee7d8 0%, #0d8f84 100%)', svg: '<path d="M9 9l11 4-4.8 1.6L13.6 19.5z"/><path d="M5.5 3.5l1.2 2.4M3 8l2.6.6M11.5 3.2l-.9 2.6"/>'},
+    '/work/': {tile: 'linear-gradient(180deg, #a3aab5 0%, #4b5260 100%)', svg: '<rect x="3.5" y="7.5" width="17" height="12.5" rx="2.5"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5"/><path d="M3.5 12.5h17"/>'},
+    '/ai/': {tile: 'linear-gradient(180deg, #c4b5fd 0%, #6d28d9 100%)', svg: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'}
+  };
+  const searchNav = document.getElementById('nav');
+  let searchForm = null;
+  let searchInput = null;
+  let searchList = null;
+  let searchItems = [];
+  let searchShown = [];
+  let searchActive = 0;
+
+  function appKey(url) {
+    const host = url.hostname.replace(/^www\./, '');
+
+    if (Object.prototype.hasOwnProperty.call(OWN_DOMAINS, host) && OWN_DOMAINS[host]) {
+      return OWN_DOMAINS[host];
+    }
+    return url.origin === location.origin ? url.pathname : url.href;
+  }
+
+  // Everything that can be searched: the Dock's apps first, then the pages in the footer that open as apps
+  function collectApps() {
+    const items = [];
+    const seen = {};
+
+    function add(href, label, icon) {
+      let url;
+
+      try {
+        url = new URL(href, location.href);
+      } catch (error) {
+        return;
+      }
+      const key = appKey(url);
+
+      if (seen[key] || isStandalone(url)) {
+        return;
+      }
+      seen[key] = true;
+      const host = url.hostname.replace(/^www\./, '');
+      const aliases = Object.keys(OWN_DOMAINS).filter(function (domain) {
+        return OWN_DOMAINS[domain] === key;
+      });
+      items.push({
+        href: url.href,
+        label: label,
+        place: url.origin === location.origin ? (PAGE_DOMAIN[url.pathname] || host + url.pathname) : host,
+        words: [label, host].concat(aliases).join(' ').toLowerCase(),
+        icon: icon
+      });
+    }
+
+    document.querySelectorAll('.dock .dock-item[data-app][href]').forEach(function (item) {
+      const svg = item.querySelector('.dock-icon svg');
+      add(item.getAttribute('href'), item.querySelector('.dock-label').textContent.trim(), {
+        tile: getComputedStyle(item).getPropertyValue('--tile').trim(),
+        svg: svg ? svg.innerHTML : ''
+      });
+    });
+    document.querySelectorAll('.footer a[href]').forEach(function (link) {
+      let url;
+
+      try {
+        url = new URL(link.href, location.href);
+      } catch (error) {
+        return;
+      }
+      const host = url.hostname.replace(/^www\./, '');
+      const own = Object.prototype.hasOwnProperty.call(OWN_DOMAINS, host) && OWN_DOMAINS[host];
+      const page = url.origin === location.origin && isPage(url);
+
+      if (!own && !page) {
+        return;
+      }
+      const key = appKey(url);
+      add(link.href, link.textContent.trim(), EXTRA_ICONS[key] || {tile: '', svg: ''});
+    });
+    return items;
+  }
+
+  function searchAllowed() {
+    const root = document.documentElement;
+    const dockInIsland = root.getAttribute('data-dock') === 'top' && !window.matchMedia('(max-width: 820px)').matches;
+    return searchNav && !EMBEDDED && !isOpen && !dockInIsland && !root.classList.contains('preview-locked');
+  }
+
+  function buildSearch() {
+    searchForm = document.createElement('form');
+    searchForm.className = 'island-search';
+    searchForm.setAttribute('role', 'search');
+    searchForm.innerHTML = SEARCH_ICON +
+      '<input type="search" placeholder="Search apps" aria-label="Search apps" autocomplete="off" spellcheck="false"' +
+      ' role="combobox" aria-expanded="true" aria-controls="island-results" aria-autocomplete="list">';
+    searchInput = searchForm.querySelector('input');
+    searchNav.insertBefore(searchForm, searchNav.querySelector('.theme-toggle'));
+
+    searchList = document.createElement('div');
+    searchList.className = 'island-results';
+    searchList.id = 'island-results';
+    searchList.setAttribute('role', 'listbox');
+    searchList.setAttribute('aria-label', 'Apps');
+    searchList.hidden = true;
+    document.body.appendChild(searchList);
+
+    searchInput.addEventListener('input', function () {
+      searchActive = 0;
+      renderResults();
+    });
+    searchInput.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        searchActive = (searchActive + step + searchShown.length) % Math.max(searchShown.length, 1);
+        markActive();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSearch();
+      }
+    });
+    searchForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      if (searchShown[searchActive]) {
+        openResult(searchShown[searchActive]);
+      }
+    });
+    searchList.addEventListener('mousedown', function (event) {
+      event.preventDefault(); // keep the field focused while choosing
+    });
+    searchList.addEventListener('click', function (event) {
+      const row = event.target.closest('[data-index]');
+
+      if (row) {
+        openResult(searchShown[Number(row.getAttribute('data-index'))]);
+      }
+    });
+  }
+
+  function placeResults() {
+    const box = searchNav.getBoundingClientRect();
+    searchList.style.top = Math.round(box.bottom + 8) + 'px';
+    searchList.style.left = Math.round(box.left) + 'px';
+    searchList.style.width = Math.round(box.width) + 'px';
+  }
+
+  function renderResults() {
+    const query = searchInput.value.trim().toLowerCase();
+    const starts = [];
+    const contains = [];
+
+    searchItems.forEach(function (item) {
+      if (!query) {
+        starts.push(item);
+      } else if (item.label.toLowerCase().indexOf(query) === 0) {
+        starts.push(item);
+      } else if (item.words.indexOf(query) !== -1) {
+        contains.push(item);
+      }
+    });
+    searchShown = starts.concat(contains);
+    searchList.textContent = '';
+
+    if (!searchShown.length) {
+      const empty = document.createElement('p');
+      empty.className = 'island-results-empty';
+      empty.textContent = 'No app found.';
+      searchList.appendChild(empty);
+      return;
+    }
+    searchShown.forEach(function (item, index) {
+      const row = document.createElement('div');
+      row.className = 'island-result';
+      row.id = 'island-result-' + index;
+      row.setAttribute('role', 'option');
+      row.setAttribute('data-index', String(index));
+      const tile = document.createElement('span');
+      tile.className = 'island-result-icon';
+      tile.setAttribute('aria-hidden', 'true');
+
+      if (item.icon.tile) {
+        tile.style.background = item.icon.tile;
+      }
+      if (item.icon.svg) {
+        tile.innerHTML = '<svg viewBox="0 0 24 24">' + item.icon.svg + '</svg>';
+      } else {
+        tile.textContent = item.label.charAt(0);
+      }
+      const text = document.createElement('span');
+      text.className = 'island-result-text';
+      const name = document.createElement('strong');
+      name.textContent = item.label;
+      const place = document.createElement('span');
+      place.textContent = item.place;
+      text.appendChild(name);
+      text.appendChild(place);
+      row.appendChild(tile);
+      row.appendChild(text);
+      searchList.appendChild(row);
+    });
+    markActive();
+  }
+
+  function markActive() {
+    searchList.querySelectorAll('.island-result').forEach(function (row, index) {
+      const active = index === searchActive;
+      row.classList.toggle('is-active', active);
+      row.setAttribute('aria-selected', active ? 'true' : 'false');
+
+      if (active) {
+        searchInput.setAttribute('aria-activedescendant', row.id);
+        row.scrollIntoView({block: 'nearest'});
+      }
+    });
+  }
+
+  function openSearch() {
+    if (!searchForm) {
+      buildSearch();
+    }
+    searchItems = collectApps();
+    searchActive = 0;
+    searchInput.value = '';
+    searchNav.classList.add('is-searching');
+    placeResults();
+    renderResults();
+    searchList.hidden = false;
+    requestAnimationFrame(function () {
+      searchList.classList.add('is-shown');
+    });
+    searchInput.focus({preventScroll: true});
+  }
+
+  function closeSearch() {
+    if (!searchNav || !searchNav.classList.contains('is-searching')) {
+      return;
+    }
+    searchNav.classList.remove('is-searching');
+    searchList.classList.remove('is-shown');
+    searchList.hidden = true;
+    searchInput.blur();
+  }
+
+  function openResult(item) {
+    closeSearch();
+
+    if (!item) {
+      return;
+    }
+    // Open it like a click on the app: in the panel (or as a card, for apps that live elsewhere)
+    if (!route(item.href, null)) {
+      location.href = item.href;
+    }
+  }
+
+  if (searchNav && !EMBEDDED) {
+    searchNav.addEventListener('click', function (event) {
+      if (searchNav.classList.contains('is-searching')
+        || event.target.closest('a, button, input, form, .dock') || !searchAllowed()) {
+        return;
+      }
+      openSearch();
+    });
+    document.addEventListener('click', function (event) {
+      if (searchNav.classList.contains('is-searching')
+        && !event.target.closest('#nav') && !event.target.closest('.island-results')) {
+        closeSearch();
+      }
+    });
+    window.addEventListener('resize', function () {
+      if (searchNav.classList.contains('is-searching')) {
+        placeResults();
+      }
+    });
+    // An app opening (from the Dock, a link, the back button) puts the island back as it was
+    new MutationObserver(function () {
+      if (document.documentElement.classList.contains('preview-locked')) {
+        closeSearch();
+      }
+    }).observe(document.documentElement, {attributes: true, attributeFilter: ['class']});
   }
 })();
