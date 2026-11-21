@@ -328,7 +328,8 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
         background: none;
     }
 
-    .dock .dock-item:nth-child(4n + 1) {
+    /* The Dock stops where it is let go, settling on the nearest app (not 4 at a time) */
+    .dock .dock-item[data-app] {
         scroll-snap-align: start;
     }
 
@@ -428,20 +429,14 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
     }
 }
 
-/* Phone Dock: always 4 apps showing. The pages snap at the start, and the last page snaps to the end,
-   so it shows the last 4 apps instead of empty slots. */
+/* Phone Dock: 4 apps in view. It settles on the nearest app wherever it is let go; at the very end the last app
+   lines up with the right edge, so it never shows empty space. */
 @media (max-width: 820px) {
     /* The apps are links (<a>); the last one is the last <a> in the track */
     .dock-track > a.dock-item:last-of-type {
         scroll-snap-align: end;
     }
 
-    /* One swipe moves one page at most: a quick swipe back from the last page stops on the middle one
-       instead of flying past it to the first */
-    .dock .dock-item:nth-child(4n + 1),
-    .dock-track > a.dock-item:last-of-type {
-        scroll-snap-stop: always;
-    }
 }
 
 /* Phone Dock: 4 apps in full, and the next ones peeking in at the edges, blurred, so people know to swipe.
@@ -455,9 +450,12 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
         overflow: hidden;
     }
 
+    /* 10px of room above and below (taken back with a negative margin, so nothing moves): the strip scrolls
+       sideways, which also clips it at the top and bottom, and the icons' shadows need that room */
     .dock-track {
         grid-auto-columns: 25%;
-        padding: 0 var(--peek);
+        margin: -10px 0;
+        padding: 10px var(--peek);
         scroll-padding: 0 var(--peek);
     }
 

@@ -63,6 +63,14 @@
     '/faq/': 'idealistic.help'
   };
 
+  // Our support address: on the site it opens the Email app (a support ticket), not the mail program.
+  // The links stay ordinary email links, so they still work without JavaScript.
+  const EMAIL_APP = {'human@idealistic.ai': 'https://idealistic.email'};
+
+  function emailApp(url) {
+    return url.protocol === 'mailto:' ? EMAIL_APP[decodeURIComponent(url.pathname).toLowerCase()] || null : null;
+  }
+
   const SHORT_LINK_HOSTS = ['idealistic.chat', 'idealistic.enterprises', location.hostname];
 
   function lookup(key) {
@@ -123,6 +131,12 @@
       try {
         url = new URL(link.href, location.href);
       } catch (error) {
+        return;
+      }
+      // The support address opens the Email app, in the panel
+      if (emailApp(url)) {
+        event.preventDefault();
+        window.parent.postMessage({type: 'preview-open', href: emailApp(url)}, location.origin);
         return;
       }
       if (url.protocol !== 'http:' && url.protocol !== 'https:') {
@@ -253,7 +267,8 @@
       openH = bottomEdge - box.top;
     } else {
       const card = body.querySelector(':scope > :not(.preview-leaving)');
-      openH = islandH + (card ? card.offsetHeight + 20 : 0);
+      const cardStyle = card ? getComputedStyle(card) : null;
+      openH = islandH + (card ? card.offsetHeight + parseFloat(cardStyle.marginTop) + parseFloat(cardStyle.marginBottom) : 0);
     }
 
     // The bar (✕, title, address) sits in the island's own row: between the brand and the theme button
@@ -350,9 +365,21 @@
         });
       };
 
-      // A shortened island first widens to full length (keeping its glass), then grows down into the app
-      if (nav && nav.classList.contains('is-compact') && !reduceMotion.matches
-        && !root.classList.contains('island-hosting')) {
+      // The island first widens to the open width (wider than usual, or from its shortened pill), keeping its
+      // glass, then grows down into the app
+      let narrower = false;
+
+      if (nav && !root.classList.contains('island-hosting')) {
+        const before = nav.offsetWidth;
+        nav.style.transition = 'none';
+        root.classList.add('island-widening');
+        const wide = nav.offsetWidth;
+        root.classList.remove('island-widening');
+        void nav.offsetWidth;
+        nav.style.transition = '';
+        narrower = before < wide - 2;
+      }
+      if (narrower && !reduceMotion.matches) {
         root.classList.add('island-widening');
         clearTimeout(widenTimer);
         widenTimer = setTimeout(grow, 380);
@@ -477,6 +504,30 @@
     return reveal;
   }
 
+  // The page has loaded: the heartbeat does not jump off mid-beat, it fades out smoothly from where it is
+  function stopHeartbeat() {
+    if (!sheet || !sheet.classList.contains('is-loading')) {
+      return;
+    }
+    const body = sheet.querySelector('.preview-body');
+    let glow = 0;
+
+    try {
+      glow = parseFloat(getComputedStyle(body, '::after').opacity) || 0;
+    } catch (error) {
+      glow = 0;
+    }
+    sheet.classList.remove('is-loading');
+
+    if (glow > 0.01 && body.animate && !reduceMotion.matches) {
+      try {
+        body.animate([{opacity: glow}, {opacity: 0}], {duration: 450, easing: 'ease-out', pseudoElement: '::after'});
+      } catch (error) {
+        // Older browsers: it simply stops
+      }
+    }
+  }
+
   // A page of this site (or one of our own domains), loaded inside the sheet as an iframe of its address
   function openPage(url, display, replace, pagePath) {
     if (!sheet) {
@@ -504,7 +555,7 @@
       reveal();
 
       if (frame.isConnected) {
-        sheet.classList.remove('is-loading');
+        stopHeartbeat();
       }
 
       try {
@@ -546,7 +597,7 @@
     // An app that lives elsewhere (Community) is still the open app: its Dock icon shows it, and tapping it closes it
     sheet.setAttribute('data-href', url.href);
     markDock(url.href);
-    sheet.classList.remove('is-loading');
+    stopHeartbeat();
     const body = sheet.querySelector('.preview-body');
     const leaving = beginSwitch(body);
 
@@ -807,8 +858,12 @@
     } catch (error) {
       return false;
     }
+    // The support address opens the Email app instead of the mail program
+    if (emailApp(url)) {
+      return route(emailApp(url), event);
+    }
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return false; // mailto: and similar open the right app themselves
+      return false; // other mailto: and similar open the right app themselves
     }
     const host = url.hostname.replace(/^www\./, '');
     const display = shown(url);
@@ -1005,8 +1060,7 @@
     '/giveaways/': 'giveaway free win winner prize prizes contest competition raffle gift gifts lottery',
     '/apps/': 'app application download install iphone ipad ios apple app store android google play store phone mobile tablet',
     '/faq/': 'help faq questions question answers support how what why info information guide problem problems issue trouble',
-    '/email/': 'email mail contact message write support ticket help complaint feedback reach us customer service talk human report bug',
-    'mailto:human@idealistic.ai': 'email mail contact support human address write',
+    '/email/': 'email mail contact message write support ticket help complaint feedback reach us customer service talk human report bug human@idealistic.ai address',
     '/ads/': 'ads ad advertising advertisement advertise promote promotion sponsor sponsored marketing click',
     '/work/': 'work job jobs career careers hiring hire apply application employment position positions vacancy vacancies team join recruit',
     '/ai/': 'ai artificial intelligence robot machine learning gpt model how we use ai',
@@ -1016,7 +1070,7 @@
     '/instructions/user_data_deletion/': 'delete deletion remove erase data account gdpr forget me right to be forgotten privacy legal',
     'spartan.top': 'spartan anticheat anti cheat cheat cheating hack hacks hacker minecraft plugin server protection',
     'vagdedes.com': 'community discord server people members forum join social chat creator friends',
-    'ariregister.rik.ee': 'company business register registry estonia estonian legal entity registration idealistic ou owner',
+    'ariregister.rik.ee': 'company business register registry estonia estonian legal entity registration idealistic ou owner owns owned behind who official',
     'euipo.europa.eu': 'trademark brand registered euipo eu europe legal'
   };
 
@@ -1026,7 +1080,7 @@
       .replace(/[^a-z0-9@]+/g, ' ').trim();
   }
 
-  // Up to one letter wrong, missing or extra (for words of 4 letters or more)
+  // Up to one slip: a letter wrong, missing, extra, or two letters swapped (for words of 5 letters or more)
   function nearlySame(a, b) {
     if (Math.abs(a.length - b.length) > 1) {
       return false;
@@ -1044,7 +1098,10 @@
       if (++edits > 1) {
         return false;
       }
-      if (a.length > b.length) {
+      if (a.length === b.length && a[i] === b[j + 1] && a[i + 1] === b[j]) {
+        i += 2;
+        j += 2;
+      } else if (a.length > b.length) {
         i++;
       } else if (a.length < b.length) {
         j++;
@@ -1056,15 +1113,25 @@
     return edits + (a.length - i) + (b.length - j) <= 1;
   }
 
+  // Little words that say nothing about where to go ("delete my data", "how do i get a discount")
+  const FILLER = ['a', 'an', 'the', 'my', 'me', 'i', 'to', 'of', 'for', 'do', 'can', 'want', 'need', 'where', 'is',
+    'are', 'please', 'your', 'you', 'our', 'with', 'on', 'in', 'it', 'and', 'or', 'at', 'about', 'get', 'find', 'see',
+    'how', 'what', 'why', 'when', 'which', 'there', 'any', 'some', 'have', 'has', 'does', 'will', 'would', 'this',
+    'that', 'website', 'site', 'page'];
+
   // How well an item matches what was typed: 0 is no match, higher is better. Every typed word must match.
   function score(item, query) {
-    const typed = plain(query).split(' ').filter(Boolean);
+    const all = plain(query).split(' ').filter(Boolean);
+    const meaningful = all.filter(function (word) {
+      return FILLER.indexOf(word) === -1;
+    });
+    const typed = meaningful.length ? meaningful : all;
     const name = plain(item.label);
 
     if (!typed.length) {
       return 1;
     }
-    if (name.indexOf(typed.join(' ')) === 0) {
+    if (name.indexOf(all.join(' ')) === 0) {
       return 100;
     }
     let total = 0;
@@ -1081,7 +1148,7 @@
         best = 30;
       } else if (word.length >= 3 && item.text.indexOf(word) !== -1) {
         best = 20;
-      } else if (word.length >= 4 && item.terms.some(function (term) { return nearlySame(word, term); })) {
+      } else if (word.length >= 5 && item.terms.some(function (term) { return nearlySame(word, term); })) {
         best = 10;
       }
       if (!best) {
@@ -1132,7 +1199,8 @@
       } catch (error) {
         return;
       }
-      const key = url.protocol === 'mailto:' ? url.href : appKey(url);
+      // The support address is the Email app: listed once
+      const key = emailApp(url) ? appKey(new URL(emailApp(url))) : url.protocol === 'mailto:' ? url.href : appKey(url);
 
       if (seen[key] || !label) {
         return;
@@ -1209,7 +1277,7 @@
     searchForm.className = 'island-search';
     searchForm.setAttribute('role', 'search');
     searchForm.innerHTML = SEARCH_ICON +
-      '<input type="search" placeholder="Search apps" aria-label="Search apps" autocomplete="off" spellcheck="false"' +
+      '<input type="search" placeholder="Search apps in iDEALISTIC®" aria-label="Search apps in iDEALISTIC®" autocomplete="off" spellcheck="false"' +
       ' role="combobox" aria-expanded="true" aria-controls="island-results" aria-autocomplete="list">';
     searchInput = searchForm.querySelector('input');
     searchNav.insertBefore(searchForm, searchNav.querySelector('.theme-toggle'));
@@ -1397,7 +1465,8 @@
     renderResults();
 
     // The panel holds the results, like an app: no title bar, the field is in the island's own row
-    sheet.classList.remove('is-page', 'is-loading');
+    stopHeartbeat();
+    sheet.classList.remove('is-page');
     sheet.classList.add('is-search');
     sheet.querySelector('#preview-title').textContent = 'Search';
     sheet.querySelector('.preview-host').textContent = '';
@@ -1411,7 +1480,12 @@
     document.documentElement.classList.add('preview-search');
     show(null, false);
     blurEdgesSoon();
-    searchInput.focus({preventScroll: true});
+
+    // With a mouse, type straight away. On touch screens the keyboard waits until the field itself is tapped,
+    // so the results can be looked through and scrolled first.
+    if (!window.matchMedia('(pointer: coarse)').matches) {
+      searchInput.focus({preventScroll: true});
+    }
   }
 
   // Back to a plain island (the panel closed, or it now shows the chosen app)

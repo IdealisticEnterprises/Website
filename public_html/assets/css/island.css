@@ -10,6 +10,8 @@
     --island-glass-strong: rgba(255, 255, 255, 0.045);
     --island-edge: rgba(255, 255, 255, 0.16);
     --island-full: min(1180px, calc(100% - 24px));
+    /* With an app open, the island grows past its usual width to give the app more of the screen */
+    --island-open: min(1560px, calc(100% - 24px));
     --island-compact: min(380px, calc(100% - 32px));
 }
 
@@ -159,29 +161,54 @@ html:not(.preview-locked) #nav.nav:not(.is-searching) .theme-toggle {
     }
 }
 
+/* The name and the search field share the same place in the island and cross-fade, both ways: the name slides
+   a little and fades out as the field fades in, and back when the search closes. The hidden one takes no clicks. */
 .island-search {
-    display: none;
-}
-
-#nav.nav.is-searching .brand {
-    display: none;
-}
-
-#nav.nav.is-searching .island-search {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    right: 64px;
+    z-index: 1;
     display: flex;
-    flex: 1;
     align-items: center;
     gap: 10px;
     min-width: 0;
     margin: 0;
-    animation: island-search-in 0.3s var(--island-ease) both;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-8px, -50%);
+    transition: opacity 0.3s ease, transform 0.4s var(--island-ease), visibility 0s linear 0.4s;
 }
 
-@keyframes island-search-in {
-    from {
-        opacity: 0;
-        transform: translateX(-6px);
+#nav.nav.is-searching .island-search {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, -50%);
+    transition: opacity 0.3s ease 0.05s, transform 0.4s var(--island-ease), visibility 0s;
+}
+
+#nav .brand {
+    transition: opacity 0.3s ease, transform 0.4s var(--island-ease), visibility 0s;
+}
+
+#nav.nav.is-searching .brand {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(8px);
+    transition: opacity 0.25s ease, transform 0.4s var(--island-ease), visibility 0s linear 0.4s;
+}
+
+@media (max-width: 820px) {
+    .island-search {
+        left: 16px;
+        right: 56px;
+    }
+}
+
+@media (max-width: 440px) {
+    .island-search {
+        left: 12px;
+        right: 50px;
     }
 }
 
@@ -223,7 +250,11 @@ html:not(.preview-locked) #nav.nav:not(.is-searching) .theme-toggle {
 /* Results: inside the panel, which grows down out of the island like an app (preview.css), so no glass of their
    own. They scroll when there are more than fit above the Dock. */
 .island-results {
-    margin: 10px;
+    /* The list reaches from the line under the search field down to the very bottom of the island (its first and
+       last apps keep a 10px gap inside it), so apps scrolled up or down blur away right up to its edges; at the
+       bottom, the island's own rounded corners shape the edge */
+    margin: 0 10px;
+    padding: 10px 0;
     max-height: min(460px, calc(100vh - var(--island-top, 16px) - var(--island-h, 60px) - 150px));
     max-height: min(460px, calc(100dvh - var(--island-top, 16px) - var(--island-h, 60px) - 150px));
     overflow-y: auto;
@@ -344,7 +375,20 @@ html[data-theme="light"] .island-result.is-active {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .island-search,
     #nav.nav.is-searching .island-search {
-        animation: none;
+        transform: translate(0, -50%);
+    }
+
+    #nav.nav.is-searching .brand {
+        transform: none;
+    }
+}
+
+/* The smallest phones: the hint text in the empty field is a little smaller so all of it fits (what is typed stays
+   16px, so the phone does not zoom in) */
+@media (max-width: 360px) {
+    .island-search input::placeholder {
+        font-size: 0.85rem;
     }
 }

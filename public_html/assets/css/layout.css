@@ -247,6 +247,7 @@ h2 {
 @media (min-width: 1600px) {
     :root {
         --island-full: min(1400px, calc(100% - 64px));
+        --island-open: min(1880px, calc(100% - 40px));
     }
 
     .wrap,
@@ -264,6 +265,7 @@ h2 {
 
     :root {
         --island-full: min(1700px, calc(100% - 96px));
+        --island-open: min(2300px, calc(100% - 64px));
         --dock-size: 60px;
     }
 
@@ -284,6 +286,7 @@ h2 {
 
     :root {
         --island-full: min(2100px, calc(100% - 128px));
+        --island-open: min(2900px, calc(100% - 96px));
         --dock-size: 68px;
     }
 
@@ -573,4 +576,9 @@ html.page-entering body {
     display: inline-block;
     transform-origin: 50% 85%;
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Notes with more than one paragraph (the AI page's design note): room between the paragraphs */
+.human p:not(.label) + p:not(.label) {
+    margin-top: 14px;
 }
