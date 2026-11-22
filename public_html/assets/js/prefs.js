@@ -18,10 +18,17 @@
     // No storage: the page simply appears
   }
 
+  // Search engine crawlers: every page stays itself, so each one is indexed with its own address, title and
+  // content. Without this they would follow the move to Home below and see every page as Home. Same content as
+  // visitors get, only not moved on top of Home. (Link previews read the HTML without running this, so they need
+  // nothing; the names are specific so no visitor's browser matches.)
+  const CRAWLER = /googlebot|google-inspectiontool|adsbot-google|mediapartners-google|bingbot|bingpreview|duckduckbot|yandexbot|baiduspider|applebot|slurp|petalbot|seznambot|qwantbot|ecosia|chrome-lighthouse/i;
+  const crawler = CRAWLER.test(navigator.userAgent || '');
+
   // Shown inside the preview sheet of another page of this site: drop the island, Dock and footer
   if (window.self !== window.top) {
     document.documentElement.classList.add('embedded');
-  } else if (location.pathname !== '/' && location.pathname !== '/index.html'
+  } else if (!crawler && location.pathname !== '/' && location.pathname !== '/index.html'
     && !/^\/legal(\/|$)/.test(location.pathname)) {
     // Home is always there: a page opened directly is shown on top of Home, in the sheet.
     // Legal pages (/legal/...) are the exception: they load as ordinary pages.
@@ -113,4 +120,17 @@
   } catch (error) {
     // Storage unavailable (private mode or blocked): the Dock stays at the bottom
   }
+
+  // The reply address hint: a tap shows it (phones do not focus plain text), a tap anywhere else hides it
+  document.addEventListener('click', function (event) {
+    const address = event.target.closest ? event.target.closest('.reply-address') : null;
+    document.querySelectorAll('.reply-address.is-hinting').forEach(function (other) {
+      if (other !== address) {
+        other.classList.remove('is-hinting');
+      }
+    });
+    if (address) {
+      address.classList.toggle('is-hinting');
+    }
+  });
 })();

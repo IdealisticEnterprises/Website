@@ -696,10 +696,16 @@ html.home-broken main .home-news > .wrap {
 
 /* ---------- Our reply address (Gmail) only sends replies: a hint over it says so, without taking any space.
    It shows on hover, focus or tap, and once by itself when the Email forms open (contact.js). ---------- */
+/* The bubble belongs to the paragraph around the address (never wider than it), so even while hidden it can
+   never reach past the edge of the screen and widen the page on phones */
 .reply-address {
-    position: relative;
     cursor: help;
     outline: none;
+}
+
+p:has(> .reply-address),
+p:has(> small > .reply-address) {
+    position: relative;
 }
 
 .reply-address::after {
@@ -709,7 +715,7 @@ html.home-broken main .home-news > .wrap {
     top: calc(100% + 8px);
     z-index: 30;
     width: max-content;
-    max-width: min(300px, calc(100vw - 32px));
+    max-width: min(320px, 100%);
     padding: 8px 11px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(20, 22, 28, 0.96);
