@@ -25,15 +25,15 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="/assets/css/landing.css?v=c1b6830671">
     <link rel="stylesheet" href="/assets/css/footer.css?v=a9e717fe1d">
-    <link rel="stylesheet" href="/assets/css/contact.css?v=48f74d2acd">
+    <link rel="stylesheet" href="/assets/css/contact.css?v=fb93e1d8f9">
     <link rel="stylesheet" href="/assets/css/island.css?v=91d8224380">
     <link rel="stylesheet" href="/assets/css/dock.css?v=0ef79e8f93">
     <link rel="stylesheet" href="/assets/css/brand.css?v=1a7a882567">
-    <link rel="stylesheet" href="/assets/css/layout.css?v=fa7d3d91b8">
-    <link rel="stylesheet" href="/assets/css/preview.css?v=43ae97cf0b">
+    <link rel="stylesheet" href="/assets/css/layout.css?v=2174364c5f">
+    <link rel="stylesheet" href="/assets/css/preview.css?v=8ecf624340">
     <link rel="stylesheet" href="/assets/css/performance.css?v=c849848a2f">
     <link rel="stylesheet" href="/assets/css/theme.css?v=2736079291">
-    <script data-cfasync="false" src="/assets/js/prefs.js?v=dd52727937"></script>
+    <script data-cfasync="false" src="/assets/js/prefs.js?v=bf1ace07f9"></script>
     <noscript><style>
         body > :not(noscript) { display: none !important; }
         .js-required { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
@@ -77,14 +77,14 @@
 <main id="main" class="compose-page">
 
     <form class="compose" id="contact-form" action="/api/contact" method="post" data-sitekey="1x00000000000000000000AA" data-reply="idealistic.enterprises@gmail.com" novalidate>
-        <div class="compose-field compose-ticket">
+        <div class="compose-field compose-ticket is-pending">
             <span class="compose-label">To:</span>
-            <span class="compose-address"><span class="compose-local" data-local aria-live="off"></span><span class="compose-at">@</span><span class="compose-domain" data-domain>idealistic.email</span></span>
+            <span class="compose-address"><span class="compose-local" data-local aria-live="off"></span><span class="compose-at">@</span><span class="compose-domain" data-domain></span></span><span class="compose-pending">Pick a subject first</span>
             <svg class="compose-lock" viewBox="0 0 24 24" aria-label="Fixed recipient"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <div class="compose-field compose-subject">
             <label class="compose-label" for="ticket-domain">Subject:</label>
-            <span class="compose-domain-pick"><select id="ticket-domain" name="domain"><option value="idealistic.email" data-department="Support" data-description="Help with anything" selected>Support: Help with anything</option><option value="idealistic.help" data-department="Help" data-description="Using our products">Help: Using our products</option><option value="doremi.chat" data-department="doremi.chat" data-description="Feedback and bugs">doremi.chat: Feedback and bugs</option><option value="idealistic.app" data-department="Apps" data-description="iOS and Android">Apps: iOS and Android</option><option value="idealistic.download" data-department="Downloads" data-description="Installing and updates">Downloads: Installing and updates</option><option value="idealistic.club" data-department="Membership" data-description="Plans and perks">Membership: Plans and perks</option><option value="idealistic.shop" data-department="Billing" data-description="Payments and refunds">Billing: Payments and refunds</option><option value="idealistic.sale" data-department="Sales" data-description="Prices and offers">Sales: Prices and offers</option><option value="idealistic.discount" data-department="Discounts" data-description="Discount requests">Discounts: Discount requests</option><option value="idealistic.gives" data-department="Giveaways" data-description="Entries and prizes">Giveaways: Entries and prizes</option><option value="idealistic.click" data-department="Advertising" data-description="Ads and promotion">Advertising: Ads and promotion</option><option value="idealistic.business" data-department="Partnerships" data-description="Business deals">Partnerships: Business deals</option><option value="idealistic.news" data-department="Press" data-description="Media and news">Press: Media and news</option><option value="idealistic.work" data-department="Careers" data-description="Jobs and applications">Careers: Jobs and applications</option><option value="idealistic.ai" data-department="AI" data-description="How we use AI">AI: How we use AI</option><option value="idealistic.trade" data-department="Trademark" data-description="Brand and logo use">Trademark: Brand and logo use</option><option value="idealistic.company" data-department="Legal" data-description="Terms, privacy and data">Legal: Terms, privacy and data</option><option value="idealistic.enterprises" data-department="Management" data-description="The company itself">Management: The company itself</option><option value="idealistic.contact" data-department="Reception" data-description="Everything else">Reception: Everything else</option></select><svg class="compose-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></span>
+            <span class="compose-domain-pick"><select id="ticket-domain" name="domain" required><option value="" selected disabled>Choose a subject</option><option value="idealistic.email" data-department="Support" data-description="Help with anything">Support: Help with anything</option><option value="idealistic.help" data-department="Help" data-description="Using our products">Help: Using our products</option><option value="doremi.chat" data-department="doremi.chat" data-description="Feedback and bugs">doremi.chat: Feedback and bugs</option><option value="idealistic.app" data-department="Apps" data-description="iOS and Android">Apps: iOS and Android</option><option value="idealistic.download" data-department="Downloads" data-description="Installing and updates">Downloads: Installing and updates</option><option value="idealistic.club" data-department="Membership" data-description="Plans and perks">Membership: Plans and perks</option><option value="idealistic.shop" data-department="Billing" data-description="Payments and refunds">Billing: Payments and refunds</option><option value="idealistic.sale" data-department="Sales" data-description="Prices and offers">Sales: Prices and offers</option><option value="idealistic.discount" data-department="Discounts" data-description="Discount requests">Discounts: Discount requests</option><option value="idealistic.gives" data-department="Giveaways" data-description="Entries and prizes">Giveaways: Entries and prizes</option><option value="idealistic.click" data-department="Advertising" data-description="Ads and promotion">Advertising: Ads and promotion</option><option value="idealistic.business" data-department="Partnerships" data-description="Business deals">Partnerships: Business deals</option><option value="idealistic.news" data-department="Press" data-description="Media and news">Press: Media and news</option><option value="idealistic.work" data-department="Careers" data-description="Jobs and applications">Careers: Jobs and applications</option><option value="idealistic.ai" data-department="AI" data-description="How we use AI">AI: How we use AI</option><option value="idealistic.trade" data-department="Trademark" data-description="Brand and logo use">Trademark: Brand and logo use</option><option value="idealistic.company" data-department="Legal" data-description="Terms, privacy and data">Legal: Terms, privacy and data</option><option value="idealistic.enterprises" data-department="Management" data-description="The company itself">Management: The company itself</option><option value="idealistic.contact" data-department="Reception" data-description="Everything else">Reception: Everything else</option></select><svg class="compose-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></span>
         </div>
         <div class="compose-field">
             <label class="compose-label" for="contact-email">From:</label>
@@ -158,6 +158,6 @@
 <script data-cfasync="false" src="/assets/js/island.js?v=c602d7b26e" defer></script>
 <script data-cfasync="false" src="/assets/js/dock.js?v=6a7b8aa737" defer></script>
 <script data-cfasync="false" src="/assets/js/preview.js?v=8427167a01" defer></script>
-<script data-cfasync="false" src="/assets/js/contact.js?v=bf8a14f2f3" defer></script>
+<script data-cfasync="false" src="/assets/js/contact.js?v=80202a5bac" defer></script>
 </body>
 </html>

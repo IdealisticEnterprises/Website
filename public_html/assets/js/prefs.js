@@ -133,4 +133,99 @@
       address.classList.toggle('is-hinting');
     }
   });
+  /* Tooltips: the browser's own (from title="…") are rounded and do not follow the site's theme, so every title
+     becomes data-tip (kept for screen readers as aria-description) and a square one of ours shows on mouse hover */
+  function takeTitle(element) {
+    const text = element.getAttribute('title');
+
+    if (text === null || element.tagName === 'IFRAME' || element instanceof SVGElement) {
+      return;
+    }
+    element.removeAttribute('title');
+
+    if (text) {
+      element.setAttribute('data-tip', text);
+
+      if (!element.hasAttribute('aria-label')) {
+        element.setAttribute('aria-description', text);
+      }
+    }
+  }
+
+  function takeTitles(scope) {
+    if (scope.getAttribute && scope.hasAttribute('title')) {
+      takeTitle(scope);
+    }
+    if (scope.querySelectorAll) {
+      scope.querySelectorAll('[title]').forEach(takeTitle);
+    }
+  }
+
+  new MutationObserver(function (changes) {
+    changes.forEach(function (change) {
+      if (change.type === 'attributes') {
+        takeTitle(change.target);
+      } else {
+        change.addedNodes.forEach(takeTitles);
+      }
+    });
+  }).observe(root, {subtree: true, childList: true, attributes: true, attributeFilter: ['title']});
+  takeTitles(root);
+
+  let tip = null;
+  let tipFor = null;
+  let tipTimer = 0;
+
+  function hideTip() {
+    clearTimeout(tipTimer);
+    tipFor = null;
+
+    if (tip) {
+      tip.classList.remove('is-shown');
+    }
+  }
+
+  function showTip(element) {
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.className = 'site-tip';
+      tip.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(tip);
+    }
+    tip.textContent = element.getAttribute('data-tip');
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    const box = element.getBoundingClientRect();
+    const size = tip.getBoundingClientRect();
+    const gap = 8;
+    const left = Math.max(gap, Math.min(window.innerWidth - size.width - gap, box.left + box.width / 2 - size.width / 2));
+    // Under the element, or over it when there is no room below
+    const top = box.bottom + gap + size.height <= window.innerHeight - gap ? box.bottom + gap : Math.max(gap, box.top - gap - size.height);
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
+    tip.classList.add('is-shown');
+  }
+
+  document.addEventListener('pointerover', function (event) {
+    const element = event.pointerType === 'mouse' && event.target.closest ? event.target.closest('[data-tip]') : null;
+
+    if (element === tipFor) {
+      return;
+    }
+    hideTip();
+
+    if (element) {
+      tipFor = element;
+      tipTimer = setTimeout(function () {
+        if (tipFor === element && element.isConnected) {
+          showTip(element);
+        }
+      }, 450);
+    }
+  });
+  ['pointerdown', 'keydown', 'blur'].forEach(function (name) {
+    window.addEventListener(name, hideTip, true);
+  });
+  window.addEventListener('scroll', hideTip, {capture: true, passive: true});
+  document.addEventListener('pointerleave', hideTip);
 })();

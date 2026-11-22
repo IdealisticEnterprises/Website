@@ -27,6 +27,12 @@ ErrorDocument 500 /500/index.html
         Header unset ETag
         Header unset Last-Modified
     </If>
+    # Every other page is checked with the server on each visit (a tiny "not modified" reply when nothing changed),
+    # so browsers never show an old page that still points at old scripts and styles. Those (/assets/...?v=...)
+    # stay cached: their version changes whenever they do.
+    <ElseIf "%{REQUEST_URI} =~ m#(/|\.html)$#">
+        Header always set Cache-Control "no-cache"
+    </ElseIf>
 </IfModule>
 
 <IfModule mod_rewrite.c>

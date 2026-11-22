@@ -25,15 +25,15 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="/assets/css/landing.css?v=c1b6830671">
     <link rel="stylesheet" href="/assets/css/footer.css?v=a9e717fe1d">
-    <link rel="stylesheet" href="/assets/css/contact.css?v=48f74d2acd">
+    <link rel="stylesheet" href="/assets/css/contact.css?v=fb93e1d8f9">
     <link rel="stylesheet" href="/assets/css/island.css?v=91d8224380">
     <link rel="stylesheet" href="/assets/css/dock.css?v=0ef79e8f93">
     <link rel="stylesheet" href="/assets/css/brand.css?v=1a7a882567">
-    <link rel="stylesheet" href="/assets/css/layout.css?v=fa7d3d91b8">
-    <link rel="stylesheet" href="/assets/css/preview.css?v=43ae97cf0b">
+    <link rel="stylesheet" href="/assets/css/layout.css?v=2174364c5f">
+    <link rel="stylesheet" href="/assets/css/preview.css?v=8ecf624340">
     <link rel="stylesheet" href="/assets/css/performance.css?v=c849848a2f">
     <link rel="stylesheet" href="/assets/css/theme.css?v=2736079291">
-    <script data-cfasync="false" src="/assets/js/prefs.js?v=dd52727937"></script>
+    <script data-cfasync="false" src="/assets/js/prefs.js?v=bf1ace07f9"></script>
     <noscript><style>
         body > :not(noscript) { display: none !important; }
         .js-required { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
@@ -79,7 +79,7 @@
     <form class="compose" id="contact-form" action="/api/contact" method="post" data-sitekey="1x00000000000000000000AA" data-reply="idealistic.enterprises@gmail.com" data-form="discount" novalidate>
         <div class="compose-field compose-ticket">
             <span class="compose-label">To:</span>
-            <span class="compose-address"><span class="compose-local" data-local aria-live="off"></span><span class="compose-at">@</span><span class="compose-domain" data-domain>idealistic.discount</span></span><input type="hidden" name="domain" value="idealistic.discount">
+            <span class="compose-address"><span class="compose-local" data-local aria-live="off"></span><span class="compose-at">@</span><span class="compose-domain" data-domain>idealistic.discount</span></span><span class="compose-pending">Pick a subject first</span><input type="hidden" name="domain" value="idealistic.discount">
             <svg class="compose-lock" viewBox="0 0 24 24" aria-label="Fixed recipient"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <div class="compose-field">
@@ -89,11 +89,11 @@
         </div>
         <div class="compose-field">
             <label class="compose-label" for="discount-product">Product:</label>
-            <select id="discount-product" name="product" required><option value="" selected disabled>Choose a product</option><option value="doremi.chat">doremi.chat</option><option value="Spartan AntiCheat">Spartan AntiCheat</option></select><svg class="compose-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+            <select id="discount-product" name="product" required><option value="" selected disabled>Choose a product</option><option value="doremi.chat" data-name="doremi.chat" data-description="Chat on WhatsApp">doremi.chat: Chat on WhatsApp</option><option value="Spartan AntiCheat" data-name="Spartan AntiCheat" data-description="Minecraft anti-cheat">Spartan AntiCheat: Minecraft anti-cheat</option></select><svg class="compose-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
         </div>
         <div class="compose-field">
             <label class="compose-label" for="discount-reason">Reason:</label>
-            <select id="discount-reason" name="reason" required><option value="" selected disabled>Choose a reason</option><option value="Student">Student</option><option value="Teacher or school">Teacher or school</option><option value="Non-profit organisation">Non-profit organisation</option><option value="Open-source project">Open-source project</option><option value="Content creator">Content creator</option><option value="Financial hardship">Financial hardship</option><option value="Other">Other</option></select><svg class="compose-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+            <select id="discount-reason" name="reason" required><option value="" selected disabled>Choose a reason</option><option value="Student" data-name="Student" data-description="School or university">Student: School or university</option><option value="Teacher or school" data-name="Teacher or school" data-description="Teaching and classrooms">Teacher or school: Teaching and classrooms</option><option value="Non-profit organisation" data-name="Non-profit organisation" data-description="Charities and causes">Non-profit organisation: Charities and causes</option><option value="Open-source project" data-name="Open-source project" data-description="Free software you maintain">Open-source project: Free software you maintain</option><option value="Content creator" data-name="Content creator" data-description="Videos, streams and writing">Content creator: Videos, streams and writing</option><option value="Financial hardship" data-name="Financial hardship" data-description="When the price is too much">Financial hardship: When the price is too much</option><option value="Other" data-name="Other" data-description="Tell us in your message">Other: Tell us in your message</option></select><svg class="compose-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
         </div>
         <div class="compose-field">
             <label class="compose-label" for="contact-email">From:</label>
@@ -167,6 +167,6 @@
 <script data-cfasync="false" src="/assets/js/island.js?v=c602d7b26e" defer></script>
 <script data-cfasync="false" src="/assets/js/dock.js?v=6a7b8aa737" defer></script>
 <script data-cfasync="false" src="/assets/js/preview.js?v=8427167a01" defer></script>
-<script data-cfasync="false" src="/assets/js/contact.js?v=bf8a14f2f3" defer></script>
+<script data-cfasync="false" src="/assets/js/contact.js?v=80202a5bac" defer></script>
 </body>
 </html>
