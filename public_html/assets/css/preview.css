@@ -581,16 +581,33 @@ html[data-theme="light"] .preview-body::after {
     }
 }
 
-/* ---------- Apps are see-through: no background of their own, only a light blur over Home, so its shapes
-   (and their collisions) still show behind them ---------- */
+/* ---------- Apps are see-through: no background of their own, only a light blur inside the app itself, so
+   Home's shapes (and their collisions) still show behind it. Outside the app nothing is blurred. ---------- */
 .preview .preview-backdrop,
 html[data-theme] .preview .preview-backdrop {
     background: transparent;
-    -webkit-backdrop-filter: blur(5px) saturate(130%);
-    backdrop-filter: blur(5px) saturate(130%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 .preview .preview-sheet,
 html[data-theme] .preview .preview-sheet {
     background: transparent;
+    -webkit-backdrop-filter: blur(5px) saturate(130%);
+    backdrop-filter: blur(5px) saturate(130%);
+}
+
+/* Larger screens: the Dock leaves while the search is open too (phones do it above, for apps and the search).
+   It slides away slowly, and keeps its quick transition for the zoom the rest of the time. */
+@media (min-width: 821px) {
+    body > .dock {
+        transition: transform 0.16s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+    }
+
+    html.preview-locked.preview-search body > .dock {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-50%) translateY(calc(100% + 40px));
+        transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+    }
 }

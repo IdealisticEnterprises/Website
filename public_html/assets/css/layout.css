@@ -785,12 +785,4 @@ html[data-theme="light"] .reply-address::after {
     }
 }
 
-/* The footer does not break when an app opens: it stays behind it, blurred twice (its own blur here and the app's
-   glass), so it never competes with the app's text */
-body:has(.home-hero) > .footer {
-    transition: filter 0.45s ease;
-}
-
-html.preview-locked body:has(.home-hero) > .footer {
-    filter: blur(6px);
-}
+/* The footer does not break when an app opens: it stays behind it as it is (only the app blurs what is behind it) */
