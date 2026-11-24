@@ -56,18 +56,6 @@
     transform: translateY(-8px);
 }
 
-@media (max-width: 1020px) {
-    .grid.four.plans {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 560px) {
-    .grid.four.plans {
-        grid-template-columns: 1fr;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .plans .plan,
     .plan-picker a {

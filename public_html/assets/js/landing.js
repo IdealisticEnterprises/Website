@@ -13,56 +13,6 @@
     update();
   }
 
-  const navTry = document.getElementById('nav-try');
-  const tryButtons = document.querySelectorAll('[data-try]');
-
-  if (navTry && tryButtons.length && 'IntersectionObserver' in window) {
-    const visible = new Set();
-    const tryObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          visible.add(entry.target);
-        } else {
-          visible.delete(entry.target);
-        }
-      });
-      navTry.classList.toggle('is-hidden', visible.size > 0);
-    }, {rootMargin: '-72px 0px 0px 0px'});
-    tryButtons.forEach(function (button) {
-      tryObserver.observe(button);
-    });
-  }
-
-  document.querySelectorAll('[data-paddle-price]').forEach(function (button) {
-    button.addEventListener('click', function () {
-      if (!window.Paddle || !window.Paddle.Checkout) {
-        window.location.href = button.getAttribute('data-fallback');
-        return;
-      }
-      window.Paddle.Checkout.open({items: [{priceId: button.getAttribute('data-paddle-price'), quantity: 1}]});
-    });
-  });
-
-  const revealItems = document.querySelectorAll('.reveal');
-
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {threshold: 0.08});
-    revealItems.forEach(function (item) {
-      observer.observe(item);
-    });
-  } else {
-    revealItems.forEach(function (item) {
-      item.classList.add('in');
-    });
-  }
-
   let scrollFrame = null;
 
   function stopScroll() {
@@ -199,61 +149,6 @@
     highlightPlan();
     window.dispatchEvent(new Event('urlchange'));
   }
-
-  document.querySelectorAll('[data-tabs]').forEach(function (root) {
-    const tabs = Array.from(root.querySelectorAll('[role="tab"]'));
-    const panels = Array.from(root.querySelectorAll('[role="tabpanel"]'));
-
-    function select(tab, focus) {
-      tabs.forEach(function (other, index) {
-        const active = other === tab;
-        other.setAttribute('aria-selected', active ? 'true' : 'false');
-        other.tabIndex = active ? 0 : -1;
-
-        if (active) {
-          panels[index].removeAttribute('data-inactive');
-        } else {
-          panels[index].setAttribute('data-inactive', '');
-        }
-      });
-
-      if (focus) {
-        tab.focus();
-      }
-    }
-
-    tabs.forEach(function (tab, index) {
-      tab.tabIndex = index === 0 ? 0 : -1;
-      tab.addEventListener('click', function () {
-        select(tab, false);
-      });
-      tab.addEventListener('keydown', function (event) {
-        let next = null;
-
-        if (event.key === 'ArrowRight') {
-          next = tabs[(index + 1) % tabs.length];
-        } else if (event.key === 'ArrowLeft') {
-          next = tabs[(index - 1 + tabs.length) % tabs.length];
-        } else if (event.key === 'Home') {
-          next = tabs[0];
-        } else if (event.key === 'End') {
-          next = tabs[tabs.length - 1];
-        }
-
-        if (next) {
-          event.preventDefault();
-          select(next, true);
-        }
-      });
-    });
-
-    const hash = window.location.hash.replace('#', '');
-    const wanted = hash ? root.querySelector('#tab-' + hash) : null;
-
-    if (wanted) {
-      select(wanted, false);
-    }
-  });
 
   function animateDetails(details, opening) {
     const summary = details.querySelector(':scope > summary');

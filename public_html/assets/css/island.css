@@ -97,31 +97,6 @@
     }
 }
 
-/* The island grows out of a small pill when the page loads */
-@keyframes island-bloom {
-    from {
-        width: 150px;
-        opacity: 0;
-    }
-    40% {
-        opacity: 1;
-    }
-}
-
-#nav.nav.island-intro {
-    animation: island-bloom 0.95s var(--island-spring) backwards;
-}
-
-#nav.nav.island-intro > * {
-    animation: island-content 0.5s ease 0.4s backwards;
-}
-
-@keyframes island-content {
-    from {
-        opacity: 0;
-    }
-}
-
 /* Browsers without backdrop blur get a darker glass so the text stays readable */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
     #nav.nav,
@@ -137,10 +112,6 @@
         transition-delay: 0s !important;
     }
 
-    #nav.nav.island-intro,
-    #nav.nav.island-intro > * {
-        animation: none;
-    }
 }
 
 /* ---------- Search in the island (preview.js) ----------

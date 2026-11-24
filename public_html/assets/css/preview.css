@@ -142,38 +142,6 @@
     white-space: nowrap;
 }
 
-/* The ✕ moves to the right while the pointer is in the bar's top-right corner */
-.preview-corner {
-    display: flex;
-    justify-content: flex-end;
-    flex: none;
-    width: 160px;
-    margin-left: -160px;
-}
-
-.preview-close-right {
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.6);
-}
-
-.preview-bar:has(.preview-corner:hover) .preview-close-right {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-}
-
-.preview-bar:has(.preview-corner:hover) .preview-close-left {
-    opacity: 0;
-    transform: scale(0.6);
-}
-
-@media (hover: none) {
-    .preview-corner {
-        display: none;
-    }
-}
-
 /* Content: fixed at its final size, so growing the shell never re-lays it out */
 .preview-body {
     position: relative;

@@ -19,16 +19,6 @@ body:has(.compose-page) {
     color: var(--ink);
 }
 
-/* Toolbar */
-.compose-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 48px;
-    padding: 6px 14px;
-    border-bottom: 1px solid var(--line);
-}
-
 .compose-send {
     display: grid;
     place-items: center;
@@ -183,17 +173,6 @@ html[data-theme="light"] .compose-to {
     color: #2563eb;
 }
 
-/* ---------- Consistent compose layout: one left edge, full-width dividers, Send on the right ---------- */
-.compose-toolbar {
-    justify-content: space-between;
-    min-height: 54px;
-    padding: 8px 16px;
-}
-
-.compose-toolbar .contact-status {
-    order: 1;
-}
-
 .compose-send {
     order: 2;
     display: inline-flex;
@@ -336,10 +315,6 @@ html[data-theme="light"] .compose-actions .contact-status.is-error {
     color: var(--ink);
     font-size: 0.95rem;
     overflow-wrap: anywhere;
-}
-
-.compose-uuid {
-    font-variant-numeric: tabular-nums;
 }
 
 /* Choices (product, reason): a plain line like the other rows, with a small chevron */

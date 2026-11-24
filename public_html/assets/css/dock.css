@@ -225,10 +225,6 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
         overflow: visible;
     }
 
-    html[data-dock="top"] #nav.nav.island-intro {
-        overflow: clip;
-    }
-
     html[data-dock="top"] #nav .dock {
         --dock-size: 36px;
         --dock-gap: 10px;
@@ -413,17 +409,6 @@ html[data-dock="top"] .dock-toggle .dock-icon svg {
 
 /* Email app (opens the contact form) */
 .dock-item[data-app="email"] { --tile: linear-gradient(180deg, #7cc8ff 0%, #2f7cf6 100%); }
-
-/* Empty slots that complete the last page of the phone Dock */
-.dock-spacer {
-    display: none;
-}
-
-@media (max-width: 820px) {
-    .dock-spacer {
-        display: block;
-    }
-}
 
 /* Phone Dock: names at the same height for every app; the running dot sits in the gap above the name */
 @media (max-width: 820px) {

@@ -47,18 +47,15 @@ h2 {
     margin-top: 24px;
 }
 
-.step,
-.fix {
+.step {
     padding: 24px 22px;
 }
 
-.human,
-.opensource {
+.human {
     padding: 28px 28px;
 }
 
-.human h2,
-.opensource h2 {
+.human h2 {
     margin-bottom: 10px;
     font-size: clamp(1.6rem, 3vw, 2.2rem);
 }
@@ -178,21 +175,17 @@ h2 {
     }
 
     .grid.three,
-    .grid.halves,
-    .grid.four,
-    .grid.four.plans {
+    .grid.halves {
         grid-template-columns: 1fr;
     }
 
     .step,
-    .fix,
     .plan,
     .legal-section {
         padding: 20px 18px;
     }
 
-    .human,
-    .opensource {
+    .human {
         padding: 22px 18px;
     }
 
