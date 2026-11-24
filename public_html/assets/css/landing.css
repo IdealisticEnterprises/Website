@@ -1261,3 +1261,40 @@ html[data-theme="light"] .faq-body a:hover {
     color: var(--muted);
     cursor: not-allowed;
 }
+
+/* FAQ: the list of our own domains, easy to read letter by letter (look-alike domains are not ours). Each domain
+   is as wide as its name, wrapping onto as many lines as needed, in line with the answer's text. */
+.faq-domains {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0 26px 26px 26px;
+    list-style: none;
+}
+
+.faq-domains li {
+    padding: 6px 10px;
+    border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink, #f5f7fb);
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+html[data-theme="light"] .faq-domains li {
+    background: rgba(15, 23, 42, 0.03);
+}
+
+/* Phones: a little smaller, so two fit side by side */
+@media (max-width: 640px) {
+    .faq-domains {
+        gap: 5px;
+    }
+
+    .faq-domains li {
+        padding: 5px 7px;
+        font-size: 0.74rem;
+    }
+}

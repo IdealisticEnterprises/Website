@@ -51,7 +51,7 @@ ErrorDocument 500 /500/index.html
 
     # Each domain can simply be sent by Cloudflare to /<its name>: these lead on to its page
     #   .click, .gives, .discount, .sale, .help (the FAQ), .contact (.email is /email itself), .shop,
-    #   .business (.company is /company itself), .trade (the trademark page)
+    #   .business (.company is /company itself), .trade (the trademark page), .party (doremi.chat Party)
     # The email page used to be /contact: old links lead on to /email
     RewriteRule ^click/?$ /ads/ [R=301,L]
     RewriteRule ^gives/?$ /giveaways/ [R=301,L]
@@ -62,6 +62,8 @@ ErrorDocument 500 /500/index.html
     RewriteRule ^shop/?$ /club/ [R=301,L]
     RewriteRule ^business/?$ /company/ [R=301,L]
     RewriteRule ^trade/?$ /trademark/ [R=301,L]
+    # idealistic.party arrives as /party: doremi.chat Party, where people create groups
+    RewriteRule ^party/?$ /doremi/party/ [R=301,L]
 
     # All legal information lives in /legal. The old addresses (still registered with app stores and Meta, for
     # example) lead on to the new ones; Terms of Service and Terms of Use are the same terms.

@@ -13,7 +13,9 @@
 
   const root = document.documentElement;
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const MAX_PIECES = 44;
+  // More pieces, breaking more easily (the user's wish): up to 90 at once, down to small fragments
+  const MAX_PIECES = 90;
+  const MIN_AREA = 900;
   let layer = null;
   let pieces = [];
   let frame = null;
@@ -32,7 +34,7 @@
   // Energy: the pieces' cruising speed fades with time (ENERGY_TIME seconds to lose about two thirds of it). Hits
   // slower than BREAK_SPEED (px/s) only bounce. Below STILL_SPEED and STILL_SPIN everything has come to rest.
   const ENERGY_TIME = 4;
-  const BREAK_SPEED = 30;
+  const BREAK_SPEED = 18;
   const STILL_SPEED = 1.5;
   const STILL_SPIN = 0.02;
   let elapsed = 0;
@@ -139,7 +141,7 @@
       spin: spin,
       // After the burst, each piece settles to its own cruising speed
       cruise: random(22, 70),
-      calm: 0.9,
+      calm: 0.5,
       opacity: 1,
       alive: true
     };
@@ -160,7 +162,7 @@
 
   // Break a piece in two along a random line through its middle; the halves push apart
   function split(piece) {
-    if (pieces.length >= MAX_PIECES || piece.area < 2200) {
+    if (pieces.length >= MAX_PIECES || piece.area < MIN_AREA) {
       return false;
     }
     const angle = random(0, Math.PI);
@@ -187,7 +189,7 @@
       child.x += (c * dx - s * dy) - dx;
       child.y += (s * dx + c * dy) - dy;
       child.opacity = piece.opacity;
-      child.calm = 0.6;
+      child.calm = 0.35;
       place(child);
       pieces.push(child);
     });
@@ -233,7 +235,7 @@
         bounced = true;
       }
       if (bounced && piece.calm <= 0 && Math.hypot(piece.vx, piece.vy) > BREAK_SPEED) {
-        piece.calm = 0.5;
+        piece.calm = 0.3;
         split(piece);
       }
     });
@@ -267,8 +269,8 @@
               b.vx -= along * nx;
               b.vy -= along * ny;
             }
-            a.calm = 0.5;
-            b.calm = 0.5;
+            a.calm = 0.3;
+            b.calm = 0.3;
             // Only a hard enough hit breaks them
             if (-along > BREAK_SPEED) {
               split(a);
@@ -407,7 +409,7 @@
       const cx = box.width * random(0.35, 0.65);
       const cy = box.height * random(0.35, 0.65);
       const reach = Math.hypot(box.width, box.height) * 2;
-      const count = 6 + Math.floor(Math.random() * 4);
+      const count = 10 + Math.floor(Math.random() * 6);
       const start = random(0, Math.PI * 2);
       const cuts = [];
 
@@ -430,10 +432,33 @@
         if (poly.length < 3) {
           continue;
         }
-        const burst = random(160, 320);
-        const piece = makePiece(source, poly, 0, 0, 0, Math.cos(middle) * burst, Math.sin(middle) * burst, random(-1.4, 1.4));
-        place(piece);
-        pieces.push(piece);
+        // Like glass, each wedge also cracks across, into up to three rings (each crack at its own distance): the
+        // outer parts fly off faster than the inner ones
+        const nx = Math.cos(middle);
+        const ny = Math.sin(middle);
+        const base = nx * cx + ny * cy;
+        const size = Math.hypot(box.width, box.height) / 2;
+        const rings = [random(0.18, 0.32) * size, random(0.42, 0.62) * size];
+        let rest = poly;
+        const parts = [];
+
+        rings.forEach(function (ring) {
+          const inner = cut(rest, nx, ny, base + ring);
+          const outer = cut(rest, -nx, -ny, -(base + ring));
+
+          if (inner.length >= 3 && outer.length >= 3) {
+            parts.push(inner);
+            rest = outer;
+          }
+        });
+        parts.push(rest);
+        parts.forEach(function (part, ring) {
+          const burst = random(140, 260) * (1 + ring * 0.35);
+          const spread = middle + random(-0.25, 0.25);
+          const piece = makePiece(source, part, 0, 0, 0, Math.cos(spread) * burst, Math.sin(spread) * burst, random(-1.6, 1.6));
+          place(piece);
+          pieces.push(piece);
+        });
       }
     });
     // The first snapshot is the page whole, where the rewind ends

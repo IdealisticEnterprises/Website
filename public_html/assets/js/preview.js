@@ -50,12 +50,20 @@
     'idealistic.trade': '/trademark/',
     'idealistic.news': '/news/',
     'idealistic.shop': '/club/',
-    'idealistic.enterprises': null
+    'idealistic.enterprises': null,
+    'idealistic.navy': null,
+    'idealistic.party': '/doremi/party/',
+    // One domain per plan: each opens Club at its plan (Cloudflare sends idealistic.plus to /club#plus, and so on)
+    'idealistic.plus': '/club/',
+    'idealistic.pro': '/club/',
+    'idealistic.vip': '/club/',
+    'idealistic.red': '/club/'
   };
 
   const PAGE_DOMAIN = {
     '/club/': 'idealistic.club',
     '/doremi/': 'doremi.chat',
+    '/doremi/party/': 'idealistic.party',
     '/work/': 'idealistic.work',
     '/apps/': 'idealistic.app',
     '/ai/': 'idealistic.ai',
@@ -183,6 +191,27 @@
     window.addEventListener('urlchange', tellAddress);
     window.addEventListener('hashchange', tellAddress);
     window.addEventListener('popstate', tellAddress);
+
+    // Opened at a part of the page (idealistic.vip is Club at #vip): the page loads while the panel is still
+    // growing, so the browser's own jump there gets lost. Go there once loaded, and again once the panel is open.
+    if (location.hash.length > 1) {
+      window.addEventListener('load', function () {
+        let target = null;
+
+        try {
+          target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        } catch (error) {
+          // Not a valid id
+        }
+        if (target) {
+          [0, 600].forEach(function (wait) {
+            setTimeout(function () {
+              target.scrollIntoView({block: 'start'});
+            }, wait);
+          });
+        }
+      });
+    }
     return;
   }
 

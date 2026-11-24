@@ -74,9 +74,16 @@
   // the pointer, which would otherwise count as hovering them
   let quietTimer = null;
 
+  // The apps' names (always shown under them) leave while the icons fly, and fade back in once they have landed
+  let settleTimer = null;
+
   function quietLabels(duration) {
-    dock.classList.add('is-moving');
+    dock.classList.add('is-moving', 'is-settling');
     clearTimeout(quietTimer);
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(function () {
+      dock.classList.remove('is-settling');
+    }, duration);
     quietTimer = setTimeout(function () {
       const wake = function () {
         dock.classList.remove('is-moving');
@@ -210,7 +217,7 @@
   // Phones: 4 apps at a time, a swipe moves 4 further (the last swipe shows the last 4). The apps beyond the
   // edges peek in, blurred, only on the side where there are more: at first only on the right.
   const track = dock.querySelector('.dock-track');
-  const PER_PAGE = 4;
+  const PER_PAGE = 5; // all the apps fit across now (dock.css); more would scroll, 5 at a time
 
   function maxScroll() {
     return track.scrollWidth - track.clientWidth;
