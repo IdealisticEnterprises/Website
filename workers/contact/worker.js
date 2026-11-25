@@ -49,11 +49,11 @@ const DEPARTMENTS = {
 };
 
 
-// Must match DISCOUNT_* in the site generator (the choices on the Discount request form)
+// Must match DISCOUNT_* in the site generator (the fixed product and the reasons on the Discount request form)
 const DISCOUNT = {
   title: "Discount request",
   domain: "idealistic.discount",
-  products: ["doremi.chat", "Spartan AntiCheat"],
+  products: ["Spartan AntiCheat"], // discounts are only for Spartan AntiCheat
   reasons: ["Student", "Teacher or school", "Non-profit organisation", "Open-source project", "Content creator", "Financial hardship", "Other"],
 };
 

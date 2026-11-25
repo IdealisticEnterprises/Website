@@ -37,8 +37,18 @@
     </url>
     <url>
         <loc>https://idealistic.enterprises/news/</loc>
-        <lastmod>2026-11-19</lastmod>
+        <lastmod>2026-11-26</lastmod>
         <priority>0.60</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/news/doremi-chat-launching-soon/</loc>
+        <lastmod>2026-11-26</lastmod>
+        <priority>0.50</priority>
+    </url>
+    <url>
+        <loc>https://idealistic.enterprises/news/spartan-anticheat-rewrite/</loc>
+        <lastmod>2026-11-26</lastmod>
+        <priority>0.50</priority>
     </url>
     <url>
         <loc>https://idealistic.enterprises/company/</loc>

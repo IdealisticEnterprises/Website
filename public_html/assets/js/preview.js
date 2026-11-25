@@ -175,8 +175,12 @@
         window.top.location.href = url.href;
         return;
       }
-      // Same-page anchors and other pages of this site simply load inside the sheet
+      // Same-page anchors and other pages of this site load inside the sheet, in place of this page: replaced, not
+      // added to the browser's history. A step added inside the sheet would be the one closing the panel goes back
+      // over, leaving a stale "app open" step behind that a later close would reopen (News → a story → close).
       if (isPage(url) && !OWN_DOMAINS[url.hostname.replace(/^www\./, '')]) {
+        event.preventDefault();
+        location.replace(url.href);
         return;
       }
       event.preventDefault();
@@ -267,6 +271,7 @@
   // Only transform and opacity animate (graphics chip only), so it stays smooth on slow machines
   // Put the island and the shell back exactly as they were (no drag offsets, fully visible)
   let openToken = 0;
+  let openedFrom = '/';
 
   function restoreIsland() {
     const nav = document.getElementById('nav');
@@ -468,6 +473,9 @@
 
     // The back button / back gesture closes the sheet instead of leaving Home
     if (!historyEntry) {
+      // Where the app was opened from (Home, or a legal page on its own): closing it must lead back there
+      openedFrom = replace ? '/' : location.pathname + location.search;
+
       if (replace) {
         history.replaceState({preview: true}, '', barUrl || location.href);
       } else {
@@ -715,6 +723,16 @@
 
       if (!fromHistory) {
         history.back();
+        // Safety net: if going back did not lead out of the app (a step was added inside the sheet after all), the
+        // address still shows the app. Make that step the page the app was opened from, so no later close or back
+        // can reopen it.
+        const token = openToken;
+        const from = openedFrom;
+        setTimeout(function () {
+          if (!isOpen && token === openToken && location.pathname + location.search !== from) {
+            history.replaceState(null, '', from);
+          }
+        }, 400);
       }
     }
   }

@@ -617,6 +617,18 @@ html.page-entering body {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
+/* Each card is a column: the button sits at the bottom, so the buttons of cards side by side line up and every
+   card has the same space under it, however long its title or summary */
+.news-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.news-card .actions {
+    margin-top: auto;
+    padding-top: 24px;
+}
+
 .news-card h3 a {
     color: inherit;
     text-decoration: none;
@@ -639,6 +651,16 @@ html.page-entering body {
 
 .news-story .actions {
     margin-top: 28px;
+}
+
+/* Links in a story (e.g. to GitHub): blue, like links in the FAQ */
+.news-story p a {
+    color: var(--blue-soft);
+    text-underline-offset: 3px;
+}
+
+html[data-theme="light"] .news-story p a {
+    color: #2563eb;
 }
 
 /* Home: the latest stories, under the first screen */
