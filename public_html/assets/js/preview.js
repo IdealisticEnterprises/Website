@@ -489,13 +489,16 @@
 
 
   // The Dock's dot follows the page that is open in the panel (none while Home is showing). pathname is a page
-  // of this site (/club/), or the full address of an app that lives elsewhere (Community: https://vagdedes.com/)
+  // of this site (/club/), or the full address of an app that lives elsewhere (Community: https://vagdedes.com/).
+  // A page inside an app belongs to it: a story (/news/<story>/) keeps News the open app.
   function markDock(pathname) {
     document.querySelectorAll('.dock .dock-item[href]').forEach(function (item) {
       const path = item.getAttribute('data-path') || new URL(item.href, location.href).pathname;
       const full = new URL(path, location.href).href;
+      const inside = path.length > 1 && path.charAt(path.length - 1) === '/' && pathname
+        && pathname.indexOf(path) === 0;
 
-      if (pathname && (path === pathname || full === pathname)) {
+      if (pathname && (path === pathname || full === pathname || inside)) {
         item.setAttribute('aria-current', 'page');
       } else {
         item.removeAttribute('aria-current');
