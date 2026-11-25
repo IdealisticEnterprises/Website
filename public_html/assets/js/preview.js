@@ -1104,8 +1104,8 @@
   // Everyday words people may type for each place, so the search finds it even without its exact name.
   // Keyed by the page's path, the email address, or the website's host.
   const SEARCH_WORDS = {
-    '/doremi/': 'doremi chat chatbot bot assistant ai message messages messaging talk text whatsapp telegram messenger instagram discord coming soon product new',
-    '/club/': 'plans plan pricing price prices cost membership member premium subscription subscribe buy purchase pay payment upgrade plus pro vip red shop store tiers',
+    '/doremi/': 'doremi chat chatbot bot assistant ai message messages messaging talk text whatsapp telegram messenger instagram discord coming soon product new interests discover discovery meet people friends channel channels group groups party parties contacts commands command start',
+    '/club/': 'plans plan pricing price prices cost membership member premium subscription subscribe buy purchase pay payment upgrade plus pro vip red shop store tiers free limits euro euros once monthly one time ai deep',
     '/sales/': 'sale deals deal offer offers promo promotion promotions cheap bargain black friday cyber monday reduced',
     '/discounts/': 'discount coupon coupons code codes voucher student students teacher school university nonprofit non profit charity open source creator youtuber streamer hardship cheaper reduced price request',
     '/giveaways/': 'giveaway free win winner prize prizes contest competition raffle gift gifts lottery',
@@ -1394,10 +1394,54 @@
     });
   }
 
+  // doremi.chat's commands (commands.js, made from the same list as the doremi.chat page): shown only once the search
+  // starts with "/". "/" alone lists them all; then the shortcut or full word that starts with what was typed comes
+  // first, and words after it can also match what a command does ("/ block someone"). Each opens the command list.
+  const COMMAND_TILE = 'linear-gradient(180deg, #6ef08a 0%, #1fb84b 100%)';
+
+  function commandResults(query) {
+    const typed = query.trim().toLowerCase();
+    const rest = plain(typed.slice(1));
+    const commands = window.DOREMI_COMMANDS || [];
+
+    return commands.map(function (command, index) {
+      const names = [command.short, command.word].filter(Boolean);
+      let rank = 0;
+
+      if (typed === '/') {
+        rank = 1;
+      } else if (names.indexOf(typed) !== -1) {
+        rank = 100;
+      } else if (command.short.indexOf(typed) === 0) {
+        rank = 80;
+      } else if (command.word && command.word.indexOf(typed) === 0) {
+        rank = 60;
+      } else if (rest.length >= 3 && rest.split(' ').every(function (word) {
+        return plain(command.text + ' ' + command.group).indexOf(word) !== -1;
+      })) {
+        rank = 20;
+      }
+      return {command: command, index: index, rank: rank, names: names};
+    }).filter(function (entry) {
+      return entry.rank > 0;
+    }).sort(function (a, b) {
+      return b.rank - a.rank || a.index - b.index;
+    }).map(function (entry) {
+      return {
+        href: '/doremi/#commands',
+        label: entry.names.join('  '),
+        place: entry.command.text,
+        command: true,
+        icon: {tile: COMMAND_TILE, glyph: '/'}
+      };
+    });
+  }
+
   function renderResults() {
     const query = searchInput.value;
+    const commands = query.trim().charAt(0) === '/';
     // Best matches first; equal ones keep their usual order (the Dock's apps first)
-    searchShown = searchItems.map(function (item, index) {
+    searchShown = commands ? commandResults(query) : searchItems.map(function (item, index) {
       return {item: item, index: index, score: score(item, query)};
     }).filter(function (entry) {
       return entry.score > 0;
@@ -1411,13 +1455,13 @@
     if (!searchShown.length) {
       const empty = document.createElement('p');
       empty.className = 'island-results-empty';
-      empty.textContent = 'No app found.';
+      empty.textContent = commands ? 'No command found.' : 'No app found.';
       searchList.appendChild(empty);
       return;
     }
     searchShown.forEach(function (item, index) {
       const row = document.createElement('div');
-      row.className = 'island-result';
+      row.className = item.command ? 'island-result is-command' : 'island-result';
       row.id = 'island-result-' + index;
       row.setAttribute('role', 'option');
       row.setAttribute('data-index', String(index));

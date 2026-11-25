@@ -372,3 +372,20 @@ html[data-theme="light"] .island-result.is-active {
         padding: 9px 9px 9px 22px;
     }
 }
+
+/* doremi.chat commands in the search (typed with "/"): the command in a code font, and what it does in full */
+.island-result.is-command .island-result-text strong {
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9rem;
+    white-space: pre;
+}
+
+.island-result.is-command .island-result-text span {
+    white-space: normal;
+}
+
+.island-result.is-command .island-result-icon {
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+}

@@ -713,3 +713,12 @@ html[data-theme="light"] .faq-domains li {
         font-size: 0.74rem;
     }
 }
+
+/* Links inside cards (doremi.chat's idealistic.party, the AI page's privacy link) */
+.step p a {
+    color: var(--blue-soft);
+}
+
+html[data-theme="light"] .step p a {
+    color: #2563eb;
+}

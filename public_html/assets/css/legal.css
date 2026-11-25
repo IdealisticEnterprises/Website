@@ -151,8 +151,13 @@
 }
 
 .legal-section strong {
-    color: #ffffff;
+    color: var(--ink);
     font-weight: 600;
+}
+
+/* List items read like the paragraphs around them; their bold start stands out */
+.legal-section li {
+    color: var(--muted);
 }
 
 .legal-section a,
