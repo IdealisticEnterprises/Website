@@ -169,8 +169,8 @@
         window.parent.postMessage({type: 'preview-close'}, location.origin);
         return;
       }
-      // A legal page replaces the whole window, outside the panel
-      if (isStandalone(url)) {
+      // A legal page, or a checkout (data-top: Stripe cannot load in a frame), replaces the whole window
+      if (isStandalone(url) || link.hasAttribute('data-top')) {
         event.preventDefault();
         window.top.location.href = url.href;
         return;
@@ -1080,6 +1080,7 @@
       || event.button !== 0
       || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
       || link.target === '_blank'
+      || link.hasAttribute('data-top')
       || link.closest('.preview')) {
       return;
     }
