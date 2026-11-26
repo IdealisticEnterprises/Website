@@ -848,3 +848,108 @@ html.embedded::-webkit-scrollbar,
 html:has(body .home-hero)::-webkit-scrollbar {
     display: none;
 }
+
+/* Hints: a small square "i" after a word that needs explaining (a seat name, a limit, "+ VAT"). Hover, focus or tap
+   it and the explanation appears above it (below when there is no room; hints.js keeps it inside the screen). */
+.hint {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    margin: 0 0 0 6px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    font: 700 11px/1 Georgia, "Times New Roman", serif;
+    vertical-align: 0.12em;
+    cursor: help;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.hint::before {
+    content: "i";
+}
+
+.hint:hover,
+.hint:focus-visible,
+.hint.is-open {
+    border-color: var(--blue-soft);
+    background: rgba(96, 165, 250, 0.16);
+    color: #ffffff;
+    outline: none;
+}
+
+/* ".hint > .hint-tip": stronger than the rules of what holds it (".plan-price span" would shrink the text) */
+.hint > .hint-tip {
+    position: absolute;
+    bottom: calc(100% + 9px);
+    left: 50%;
+    z-index: 30;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 32px));
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin: 0;
+    background: #12141a;
+    color: #e6e9ef;
+    font: 400 0.82rem/1.45 Inter, system-ui, sans-serif;
+    letter-spacing: 0;
+    vertical-align: baseline;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(calc(-50% + var(--shift, 0px)), 4px);
+    transition: opacity 0.16s ease, transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Cards are layers of their own (their blur), so a bubble could slip under the text or card next to it: the card
+   holding an open hint comes to the front */
+.island:has(.hint:hover),
+.island:has(.hint:focus-visible),
+.island:has(.hint.is-open) {
+    position: relative;
+    z-index: 40;
+}
+
+.hint.is-below > .hint-tip {
+    top: calc(100% + 9px);
+    bottom: auto;
+    transform: translate(calc(-50% + var(--shift, 0px)), -4px);
+}
+
+.hint:hover > .hint-tip,
+.hint:focus-visible > .hint-tip,
+.hint.is-open > .hint-tip {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--shift, 0px)), 0);
+}
+
+html[data-theme="light"] .hint {
+    background: rgba(15, 20, 30, 0.04);
+}
+
+html[data-theme="light"] .hint:hover,
+html[data-theme="light"] .hint:focus-visible,
+html[data-theme="light"] .hint.is-open {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+}
+
+html[data-theme="light"] .hint > .hint-tip {
+    background: #ffffff;
+    color: var(--ink);
+    box-shadow: 0 12px 30px rgba(15, 20, 30, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hint-tip {
+        transition: none;
+    }
+}
